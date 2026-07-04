@@ -1,0 +1,190 @@
+{% extends "core/base.html" %}
+{% load metal_tags %}
+{% block title %}Painel — MetalVault{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="fw-bold" style="font-size:1.75rem;">Painel</h1>
+    <p class="text-muted-mv mb-0" style="font-size:.875rem;">Visão geral do seu acervo</p>
+  </div>
+  <a href="{% url 'inventory' %}" class="btn btn-outline-secondary btn-sm">Ver inventário completo</a>
+</div>
+
+<!-- Market Quotes -->
+<div class="mb-4">
+  <div class="d-flex align-items-end justify-content-between mb-2">
+    <h6 class="text-muted-mv text-uppercase" style="font-size:.7rem;letter-spacing:.06em;font-weight:600;">Cotações de mercado</h6>
+    <span class="text-muted-mv" style="font-size:.7rem;" id="quote-time"></span>
+  </div>
+  <div class="row g-3" id="quotes-container">
+    <div class="col-12 text-muted-mv" style="font-size:.875rem;">Carregando cotações…</div>
+  </div>
+</div>
+
+{% if total_items == 0 %}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <div class="d-inline-block rounded-circle bg-surface2 p-3 mb-3"><i class="bi bi-coin text-primary-mv" style="font-size:2.5rem;"></i></div>
+    <h4>Seu cofre está vazio</h4>
+    <p class="text-muted-mv">Cadastre o primeiro metal para começar.</p>
+    <a href="{% url 'metal_create' %}" class="btn btn-primary">Cadastrar metal</a>
+  </div>
+</div>
+{% else %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card"><div class="stat-card">
+      <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+      <div><div class="stat-label">Total de itens</div><div class="stat-value">{{ total_items }}</div></div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card"><div class="stat-card">
+      <div class="stat-icon"><i class="bi bi-speedometer"></i></div>
+      <div><div class="stat-label">Peso total</div><div class="stat-value">{{ total_grams|grams }}</div><div class="stat-sub">{{ total_grams|troy_oz }}</div></div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card"><div class="stat-card">
+      <div class="stat-icon"><i class="bi bi-wallet2"></i></div>
+      <div><div class="stat-label">Valor de aquisição</div><div class="stat-value">{{ total_value|brl }}</div></div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card"><div class="stat-card">
+      <div class="stat-icon"><i class="bi bi-gem"></i></div>
+      <div><div class="stat-label">Materiais distintos</div><div class="stat-value">{{ materials_count }}</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Valuation -->
+<div class="card mb-4" id="valuation-card" style="display:none;"></div>
+
+<!-- Chart + breakdown -->
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header py-3"><h6 class="mb-0">Distribuição por material (gramas)</h6></div>
+      <div class="card-body" style="height:300px;"><canvas id="chart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header py-3"><h6 class="mb-0">Detalhamento</h6></div>
+      <div class="card-body">
+        {% for label, data in by_material.items %}
+        <div class="d-flex justify-content-between align-items-center {% if not forloop.last %}border-bottom border-mv pb-2 mb-2{% endif %}">
+          <div>
+            <div class="fw-medium">{{ label }}</div>
+            <div class="text-muted-mv" style="font-size:.75rem;">{{ data.count }} {{ data.count|pluralize:"item,itens" }} · {{ data.grams|grams }}</div>
+          </div>
+          <div class="text-primary-mv fw-semibold" style="font-size:.875rem;">{{ data.value|brl }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+// Format BRL
+function fBRL(v) {
+  return 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function fGrams(v) {
+  return Number(v).toFixed(2).replace('.', ',') + ' g';
+}
+
+// Quotes
+fetch('/api/quotes/')
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { document.getElementById('quotes-container').innerHTML = '<div class="col-12 text-muted-mv">Não foi possível carregar cotações.</div>'; return; }
+    const OZ = 31.1034768;
+    let html = '';
+    const items = [
+      { key: 'USDBRL', label: 'Dólar (USD)', unit: '' },
+      { key: 'XAUBRL', label: 'Ouro (XAU)', unit: 'oz t' },
+      { key: 'XAGBRL', label: 'Prata (XAG)', unit: 'oz t' },
+    ];
+    items.forEach(it => {
+      const q = data[it.key];
+      if (!q) return;
+      const bid = Number(q.bid);
+      const pct = Number(q.pctChange);
+      const up = pct >= 0;
+      const sub = it.unit ? fBRL(bid / OZ) + ' / g' : `Máx ${fBRL(q.high)} · Mín ${fBRL(q.low)}`;
+      html += `<div class="col-sm-6 col-lg-4"><div class="card"><div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+        <div class="flex-grow-1"><div class="d-flex justify-content-between"><span class="stat-label">${it.label}</span>
+        <span class="${up?'text-success-mv':'text-danger-mv'}" style="font-size:.75rem;"><i class="bi bi-arrow-${up?'up':'down'}-right"></i> ${pct.toFixed(2).replace('.',',')}%</span></div>
+        <div class="stat-value">${fBRL(bid)}${it.unit ? '<span class="text-muted-mv" style="font-size:.7rem;font-weight:400;"> /'+it.unit+'</span>' : ''}</div>
+        <div class="stat-sub">${sub}</div></div></div></div></div>`;
+    });
+    document.getElementById('quotes-container').innerHTML = html;
+    document.getElementById('quote-time').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+  })
+  .catch(() => { document.getElementById('quotes-container').innerHTML = '<div class="col-12 text-muted-mv">Erro ao carregar cotações.</div>'; });
+
+// Valuation
+fetch('/api/valuation/')
+  .then(r => r.json())
+  .then(data => {
+    if (!data.rows || data.rows.length === 0) return;
+    const card = document.getElementById('valuation-card');
+    const delta = data.total_current - data.total_acquisition;
+    const pct = data.total_acquisition > 0 ? ((delta / data.total_acquisition) * 100).toFixed(2).replace('.',',') : '0,00';
+    const up = delta >= 0;
+    let rowsHtml = data.rows.map(r => `<tr>
+      <td class="fw-medium">${r.label}</td>
+      <td class="text-end tabular-nums">${fGrams(r.grams)}</td>
+      <td class="text-end tabular-nums text-muted-mv">${fGrams(r.pure_grams)}</td>
+      <td class="text-end tabular-nums">${r.has_price ? fBRL(r.spot_per_gram) : '—'}</td>
+      <td class="text-end tabular-nums">${fBRL(r.acquisition)}</td>
+      <td class="text-end tabular-nums fw-semibold text-primary-mv">${r.has_price ? fBRL(r.current) : '<span class="text-muted-mv">sem cotação</span>'}</td>
+    </tr>`).join('');
+    card.innerHTML = `<div class="card-header py-3 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0"><i class="bi bi-graph-up-arrow text-primary-mv me-2"></i>Valor atualizado do inventário</h6>
+      <span class="text-muted-mv" style="font-size:.7rem;">Baseado nas cotações ao vivo</span></div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Valor de aquisição</div><div class="stat-value">${fBRL(data.total_acquisition)}</div></div></div>
+          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Valor atual estimado</div><div class="stat-value text-primary-mv">${fBRL(data.total_current)}</div></div></div>
+          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Variação</div><div class="stat-value ${up?'text-success-mv':'text-danger-mv'}">${up?'+':''}${fBRL(delta)}</div><div class="stat-sub ${up?'text-success-mv':'text-danger-mv'}">${up?'+':''}${pct}%</div></div></div>
+        </div>
+        <div class="table-responsive"><table class="table table-sm mb-2"><thead><tr>
+          <th>Material</th><th class="text-end">Peso bruto</th><th class="text-end">Peso fino</th><th class="text-end">Preço/g</th><th class="text-end">Aquisição</th><th class="text-end">Valor atual</th>
+        </tr></thead><tbody>${rowsHtml}</tbody></table></div>
+        <p class="text-muted-mv mb-0" style="font-size:.75rem;">Cálculo: peso (g) × pureza × preço da grama.</p>
+      </div>`;
+    card.style.display = 'block';
+  });
+
+// Chart
+const chartData = {{ chart_data|safe }};
+if (chartData.length > 0) {
+  new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.map(d => d.name),
+      datasets: [{ label: 'Gramas', data: chartData.map(d => d.grams), backgroundColor: 'rgba(201,169,78,.7)', borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8b8fa3' }, grid: { color: 'rgba(46,51,69,.5)' } },
+        y: { ticks: { color: '#8b8fa3' }, grid: { color: 'rgba(46,51,69,.5)' } }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

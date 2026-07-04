@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% block title %}{% if is_edit %}Editar metal{% else %}Novo metal{% endif %} — MetalVault{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'inventory' %}" class="text-muted-mv" style="font-size:.85rem;"><i class="bi bi-chevron-left"></i> Inventário</a>
+  <h1 class="fw-bold mt-2" style="font-size:1.75rem;">{% if is_edit %}Editar metal{% else %}Novo metal{% endif %}</h1>
+</div>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="card mb-4">
+    <div class="card-header py-3"><h6 class="mb-0">Identificação</h6></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-sm-6"><label class="form-label">Tipo</label>{{ form.type }}{% if form.type.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.type.errors.0 }}</div>{% endif %}<div id="type-custom" style="display:none;" class="mt-2">{{ form.type_custom_label }}</div></div>
+        <div class="col-sm-6"><label class="form-label">Material</label>{{ form.material }}{% if form.material.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.material.errors.0 }}</div>{% endif %}<div id="material-custom" style="display:none;" class="mt-2">{{ form.material_custom_label }}</div></div>
+        <div class="col-sm-6"><label class="form-label">Número de série (opcional)</label>{{ form.serial_number }}</div>
+        <div class="col-sm-6"><label class="form-label">Número da NF (opcional)</label>{{ form.invoice_number }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb-4">
+    <div class="card-header py-3"><h6 class="mb-0">Medidas e aquisição</h6></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-sm-6"><label class="form-label">Pureza (%)</label>{{ form.purity_percentage }}{% if form.purity_percentage.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.purity_percentage.errors.0 }}</div>{% endif %}</div>
+        <div class="col-sm-6"><label class="form-label">Peso (gramas)</label>{{ form.weight_grams }}{% if form.weight_grams.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.weight_grams.errors.0 }}</div>{% endif %}</div>
+        <div class="col-sm-6"><label class="form-label">Data de aquisição</label>{{ form.acquisition_date }}{% if form.acquisition_date.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.acquisition_date.errors.0 }}</div>{% endif %}</div>
+        <div class="col-sm-6"><label class="form-label">Valor de aquisição (R$)</label>{{ form.acquisition_value }}{% if form.acquisition_value.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.acquisition_value.errors.0 }}</div>{% endif %}</div>
+        <div class="col-12"><label class="form-label">Local de armazenamento</label>{{ form.location }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb-4">
+    <div class="card-header py-3"><h6 class="mb-0">Documentos e fotos</h6></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-sm-4"><label class="form-label">Foto principal</label>{{ form.photo }}</div>
+        <div class="col-sm-4"><label class="form-label">Certificado</label>{{ form.certificate }}</div>
+        <div class="col-sm-4"><label class="form-label">Nota Fiscal</label>{{ form.invoice_file }}</div>
+        <div class="col-12"><label class="form-label">Fotos adicionais</label><input type="file" name="extra_photos" class="form-control" multiple accept="image/*"></div>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex justify-content-end gap-2">
+    <a href="{% url 'inventory' %}" class="btn btn-outline-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">{% if is_edit %}Salvar alterações{% else %}Cadastrar metal{% endif %}</button>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('id_type').addEventListener('change', function(){
+  document.getElementById('type-custom').style.display = this.value === 'other' ? 'block' : 'none';
+});
+document.getElementById('id_material').addEventListener('change', function(){
+  document.getElementById('material-custom').style.display = this.value === 'other' ? 'block' : 'none';
+});
+if (document.getElementById('id_type').value === 'other') document.getElementById('type-custom').style.display = 'block';
+if (document.getElementById('id_material').value === 'other') document.getElementById('material-custom').style.display = 'block';
+</script>
+{% endblock %}

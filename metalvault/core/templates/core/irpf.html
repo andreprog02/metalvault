@@ -1,0 +1,96 @@
+{% extends "core/base.html" %}
+{% load metal_tags %}
+{% block title %}Relatório IRPF — MetalVault{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="fw-bold" style="font-size:1.75rem;">Relatório IRPF</h1>
+    <p class="text-muted-mv mb-0" style="font-size:.875rem;">Bens e Direitos para a Declaração de Imposto de Renda</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'irpf_export_csv' %}?year={{ year }}&include_metals={% if include_metals %}1{% else %}0{% endif %}&show_small={% if show_small %}1{% else %}0{% endif %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download"></i> CSV</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-sm-3">
+        <label class="form-label">Ano-calendário</label>
+        <select name="year" class="form-select form-select-sm">
+          {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-3 d-flex align-items-center pt-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="include_metals" value="1" id="inc_metals" {% if include_metals %}checked{% endif %}>
+          <label class="form-check-label" for="inc_metals" style="font-size:.85rem;">Incluir barras</label>
+        </div>
+      </div>
+      <div class="col-sm-3 d-flex align-items-center pt-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="show_small" value="1" id="show_small" {% if show_small %}checked{% endif %}>
+          <label class="form-check-label" for="show_small" style="font-size:.85rem;">Itens &lt; R$ 5.000</label>
+        </div>
+      </div>
+      <div class="col-sm-3 text-end">
+        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel"></i> Aplicar</button>
+      </div>
+      <div class="col-12">
+        <div class="d-flex gap-4 justify-content-end">
+          <div class="text-end">
+            <div class="text-muted-mv" style="font-size:.7rem;">Situação 31/12/{{ year|add:"-1" }}</div>
+            <div class="fw-semibold tabular-nums" style="font-size:1.1rem;">{{ total_prev|brl }}</div>
+          </div>
+          <div class="text-end">
+            <div class="text-muted-mv" style="font-size:.7rem;">Situação 31/12/{{ year }}</div>
+            <div class="fw-semibold tabular-nums text-primary-mv" style="font-size:1.1rem;">{{ total_curr|brl }}</div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Items -->
+<div class="card">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-file-earmark-text text-primary-mv"></i>
+    <h6 class="mb-0">Itens declaráveis</h6>
+    <span class="badge badge-gold ms-2">{{ items|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if items %}
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr>
+          <th>Classif.</th><th>Discriminação</th><th class="text-end">Aquisição</th><th class="text-end">Sit. 31/12/{{ year|add:"-1" }}</th><th class="text-end">Sit. 31/12/{{ year }}</th><th class="text-end">Ações</th>
+        </tr></thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td><span class="badge badge-gold font-monospace">G{{ it.irpf_group }}/C{{ it.irpf_code }}</span></td>
+            <td style="max-width:400px;">
+              <div class="fw-medium">{{ it.description|default:it.default_description }}</div>
+              <div class="text-muted-mv mt-1" style="font-size:.75rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ it.discrimination }}</div>
+              {% if it.sold_in_year %}<span class="badge bg-danger mt-1">Vendido em {{ it.sold_date|date_br }}</span>{% endif %}
+            </td>
+            <td class="text-end tabular-nums"><div>{{ it.acquisition_value|brl }}</div><div class="text-muted-mv" style="font-size:.75rem;">{{ it.acquisition_date|date_br }}</div></td>
+            <td class="text-end tabular-nums">{{ it.prev_value|brl }}</td>
+            <td class="text-end tabular-nums fw-semibold">{{ it.curr_value|brl }}</td>
+            <td class="text-end">
+              <button class="btn btn-outline-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ it.discrimination|escapejs }}').then(()=>alert('Copiado!'))" title="Copiar discriminação"><i class="bi bi-clipboard"></i></button>
+              <a href="{% url 'irpf_edit' it.source it.obj.pk %}" class="btn btn-outline-secondary btn-sm" title="Editar IRPF"><i class="bi bi-pencil"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted-mv">Nenhum item para declarar com os filtros atuais.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
