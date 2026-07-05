@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = "django-insecure-metalvault-dev-key-change-in-production"
-DEBUG = True
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-metalvault-dev-key-change-in-production")
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1")
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -47,16 +47,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "metalvault.wsgi.application"
 
 # ══════════════════════════════════════
-# PostgreSQL
+# PostgreSQL — credenciais via variável de ambiente
 # ══════════════════════════════════════
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "metalvault",
-        "USER": "saas_user",
-        "PASSWORD": "i0jvTXkNvFbx1XbgTuyr2026",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "metalvault"),
+        "USER": os.environ.get("DB_USER", "saas_user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
