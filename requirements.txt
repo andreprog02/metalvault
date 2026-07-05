@@ -1,3 +1,4 @@
 django>=5.0
 pillow
 requests
+psycopg2-binary
