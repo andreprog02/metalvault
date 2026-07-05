@@ -2,86 +2,146 @@
 {% load metal_tags %}
 {% block title %}Painel — MetalVault{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ── Stat cards ── */
+  .dash-stat { padding: 1.25rem; display: flex; align-items: flex-start; gap: 1rem; }
+  .dash-stat .icon-wrap {
+    background: var(--mv-primary-soft); border-radius: .625rem;
+    padding: .7rem; color: var(--mv-primary); font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+  .dash-stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
+  .dash-stat .value { font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-top: .15rem; }
+  .dash-stat .sub { font-size: .75rem; color: #b0b4c8; margin-top: .1rem; }
+
+  /* ── Quote cards ── */
+  .quote-card { padding: 1.1rem 1.25rem; }
+  .quote-card .q-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
+  .quote-card .q-value { font-size: 1.2rem; font-weight: 700; color: #ffffff; margin-top: .2rem; }
+  .quote-card .q-value .q-unit { font-size: .7rem; font-weight: 400; color: #b0b4c8; margin-left: .25rem; }
+  .quote-card .q-sub { font-size: .72rem; color: #b0b4c8; margin-top: .15rem; }
+  .quote-card .q-pct { font-size: .75rem; font-weight: 600; }
+  .quote-card .q-pct.up { color: #4ade80; }
+  .quote-card .q-pct.down { color: #f87171; }
+
+  /* ── Valuation card ── */
+  .val-box { border: 1px solid var(--mv-border); border-radius: .625rem; padding: 1rem 1.15rem; background: var(--mv-surface2); }
+  .val-box .val-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
+  .val-box .val-num { font-size: 1.2rem; font-weight: 700; color: #ffffff; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+  .val-box .val-num.accent { color: var(--mv-primary); }
+  .val-box .val-num.positive { color: #4ade80; }
+  .val-box .val-num.negative { color: #f87171; }
+  .val-box .val-sub { font-size: .75rem; margin-top: .1rem; }
+  .val-box .val-sub.positive { color: #4ade80; }
+  .val-box .val-sub.negative { color: #f87171; }
+
+  /* ── Valuation table ── */
+  .val-table { color: #dcdfe8; }
+  .val-table thead th { color: #b0b4c8; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; border-bottom: 1px solid var(--mv-border); padding: .6rem .5rem; }
+  .val-table td { border-bottom: 1px solid rgba(46,51,69,.4); padding: .55rem .5rem; font-size: .85rem; }
+  .val-table .mat-name { color: #ffffff; font-weight: 600; }
+  .val-table .dim { color: #9ea2b6; }
+  .val-table .highlight { color: var(--mv-primary); font-weight: 600; }
+  .val-table .no-data { color: #787c90; font-style: italic; }
+
+  /* ── Breakdown list ── */
+  .breakdown-item { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; }
+  .breakdown-item:not(:last-child) { border-bottom: 1px solid rgba(46,51,69,.5); }
+  .breakdown-item .mat-label { color: #ffffff; font-weight: 600; font-size: .9rem; }
+  .breakdown-item .mat-meta { color: #b0b4c8; font-size: .75rem; margin-top: .1rem; }
+  .breakdown-item .mat-value { color: var(--mv-primary); font-weight: 700; font-size: .9rem; white-space: nowrap; }
+
+  /* ── Section titles ── */
+  .section-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
   <div>
-    <h1 class="fw-bold" style="font-size:1.75rem;">Painel</h1>
-    <p class="text-muted-mv mb-0" style="font-size:.875rem;">Visão geral do seu acervo</p>
+    <h1 class="fw-bold" style="font-size:1.75rem;color:#ffffff;">Painel</h1>
+    <p class="mb-0" style="font-size:.875rem;color:#b0b4c8;">Visão geral do seu acervo</p>
   </div>
   <a href="{% url 'inventory' %}" class="btn btn-outline-secondary btn-sm">Ver inventário completo</a>
 </div>
 
-<!-- Market Quotes -->
+<!-- ═══════ COTAÇÕES DE MERCADO ═══════ -->
 <div class="mb-4">
   <div class="d-flex align-items-end justify-content-between mb-2">
-    <h6 class="text-muted-mv text-uppercase" style="font-size:.7rem;letter-spacing:.06em;font-weight:600;">Cotações de mercado</h6>
-    <span class="text-muted-mv" style="font-size:.7rem;" id="quote-time"></span>
+    <span class="section-label">Cotações de mercado</span>
+    <span style="font-size:.7rem;color:#9ea2b6;" id="quote-time"></span>
   </div>
   <div class="row g-3" id="quotes-container">
-    <div class="col-12 text-muted-mv" style="font-size:.875rem;">Carregando cotações…</div>
+    <div class="col-12" style="font-size:.875rem;color:#b0b4c8;">Carregando cotações…</div>
   </div>
 </div>
 
 {% if total_items == 0 %}
 <div class="card">
   <div class="card-body text-center py-5">
-    <div class="d-inline-block rounded-circle bg-surface2 p-3 mb-3"><i class="bi bi-coin text-primary-mv" style="font-size:2.5rem;"></i></div>
-    <h4>Seu cofre está vazio</h4>
-    <p class="text-muted-mv">Cadastre o primeiro metal para começar.</p>
+    <div class="d-inline-block rounded-circle p-3 mb-3" style="background:var(--mv-primary-soft);">
+      <i class="bi bi-coin" style="font-size:2.5rem;color:var(--mv-primary);"></i>
+    </div>
+    <h4 style="color:#ffffff;">Seu cofre está vazio</h4>
+    <p style="color:#b0b4c8;">Cadastre o primeiro metal para começar.</p>
     <a href="{% url 'metal_create' %}" class="btn btn-primary">Cadastrar metal</a>
   </div>
 </div>
 {% else %}
-<!-- Stats -->
+
+<!-- ═══════ CARDS DE ESTATÍSTICA ═══════ -->
 <div class="row g-3 mb-4">
   <div class="col-sm-6 col-lg-3">
-    <div class="card"><div class="stat-card">
-      <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
-      <div><div class="stat-label">Total de itens</div><div class="stat-value">{{ total_items }}</div></div>
+    <div class="card"><div class="dash-stat">
+      <div class="icon-wrap"><i class="bi bi-box-seam"></i></div>
+      <div><div class="label">Total de itens</div><div class="value">{{ total_items }}</div></div>
     </div></div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="card"><div class="stat-card">
-      <div class="stat-icon"><i class="bi bi-speedometer"></i></div>
-      <div><div class="stat-label">Peso total</div><div class="stat-value">{{ total_grams|grams }}</div><div class="stat-sub">{{ total_grams|troy_oz }}</div></div>
+    <div class="card"><div class="dash-stat">
+      <div class="icon-wrap"><i class="bi bi-speedometer"></i></div>
+      <div><div class="label">Peso total</div><div class="value">{{ total_grams|grams }}</div><div class="sub">{{ total_grams|troy_oz }}</div></div>
     </div></div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="card"><div class="stat-card">
-      <div class="stat-icon"><i class="bi bi-wallet2"></i></div>
-      <div><div class="stat-label">Valor de aquisição</div><div class="stat-value">{{ total_value|brl }}</div></div>
+    <div class="card"><div class="dash-stat">
+      <div class="icon-wrap"><i class="bi bi-wallet2"></i></div>
+      <div><div class="label">Valor de aquisição</div><div class="value">{{ total_value|brl }}</div></div>
     </div></div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="card"><div class="stat-card">
-      <div class="stat-icon"><i class="bi bi-gem"></i></div>
-      <div><div class="stat-label">Materiais distintos</div><div class="stat-value">{{ materials_count }}</div></div>
+    <div class="card"><div class="dash-stat">
+      <div class="icon-wrap"><i class="bi bi-gem"></i></div>
+      <div><div class="label">Materiais distintos</div><div class="value">{{ materials_count }}</div></div>
     </div></div>
   </div>
 </div>
 
-<!-- Valuation -->
+<!-- ═══════ VALORIZAÇÃO DO INVENTÁRIO ═══════ -->
 <div class="card mb-4" id="valuation-card" style="display:none;"></div>
 
-<!-- Chart + breakdown -->
+<!-- ═══════ GRÁFICO + DETALHAMENTO ═══════ -->
 <div class="row g-3">
   <div class="col-lg-8">
     <div class="card">
-      <div class="card-header py-3"><h6 class="mb-0">Distribuição por material (gramas)</h6></div>
-      <div class="card-body" style="height:300px;"><canvas id="chart"></canvas></div>
+      <div class="card-header py-3"><h6 class="mb-0" style="color:#ffffff;">Distribuição por material (gramas)</h6></div>
+      <div class="card-body" style="height:320px;padding:1rem 1.25rem;">
+        <canvas id="chart"></canvas>
+      </div>
     </div>
   </div>
   <div class="col-lg-4">
     <div class="card">
-      <div class="card-header py-3"><h6 class="mb-0">Detalhamento</h6></div>
-      <div class="card-body">
+      <div class="card-header py-3"><h6 class="mb-0" style="color:#ffffff;">Detalhamento</h6></div>
+      <div class="card-body" style="padding:.75rem 1.25rem;">
         {% for label, data in by_material.items %}
-        <div class="d-flex justify-content-between align-items-center {% if not forloop.last %}border-bottom border-mv pb-2 mb-2{% endif %}">
+        <div class="breakdown-item">
           <div>
-            <div class="fw-medium">{{ label }}</div>
-            <div class="text-muted-mv" style="font-size:.75rem;">{{ data.count }} {{ data.count|pluralize:"item,itens" }} · {{ data.grams|grams }}</div>
+            <div class="mat-label">{{ label }}</div>
+            <div class="mat-meta">{{ data.count }} {{ data.count|pluralize:"item,itens" }} · {{ data.grams|grams }}</div>
           </div>
-          <div class="text-primary-mv fw-semibold" style="font-size:.875rem;">{{ data.value|brl }}</div>
+          <div class="mat-value">{{ data.value|brl }}</div>
         </div>
         {% endfor %}
       </div>
@@ -94,7 +154,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-// Format BRL
+// ── Helpers ──
 function fBRL(v) {
   return 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
@@ -102,17 +162,20 @@ function fGrams(v) {
   return Number(v).toFixed(2).replace('.', ',') + ' g';
 }
 
-// Quotes
+// ── Cotações ──
 fetch('/api/quotes/')
   .then(r => r.json())
   .then(data => {
-    if (data.error) { document.getElementById('quotes-container').innerHTML = '<div class="col-12 text-muted-mv">Não foi possível carregar cotações.</div>'; return; }
+    if (data.error) {
+      document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#b0b4c8;">Não foi possível carregar cotações.</div>';
+      return;
+    }
     const OZ = 31.1034768;
     let html = '';
     const items = [
-      { key: 'USDBRL', label: 'Dólar (USD)', unit: '' },
-      { key: 'XAUBRL', label: 'Ouro (XAU)', unit: 'oz t' },
-      { key: 'XAGBRL', label: 'Prata (XAG)', unit: 'oz t' },
+      { key: 'USDBRL', label: 'Dólar (USD)', icon: 'bi-currency-dollar', unit: '' },
+      { key: 'XAUBRL', label: 'Ouro (XAU)', icon: 'bi-circle-fill" style="color:#FFD700;font-size:.9rem', unit: 'oz t' },
+      { key: 'XAGBRL', label: 'Prata (XAG)', icon: 'bi-circle-fill" style="color:#C0C0C0;font-size:.9rem', unit: 'oz t' },
     ];
     items.forEach(it => {
       const q = data[it.key];
@@ -120,68 +183,143 @@ fetch('/api/quotes/')
       const bid = Number(q.bid);
       const pct = Number(q.pctChange);
       const up = pct >= 0;
-      const sub = it.unit ? fBRL(bid / OZ) + ' / g' : `Máx ${fBRL(q.high)} · Mín ${fBRL(q.low)}`;
-      html += `<div class="col-sm-6 col-lg-4"><div class="card"><div class="stat-card">
-        <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
-        <div class="flex-grow-1"><div class="d-flex justify-content-between"><span class="stat-label">${it.label}</span>
-        <span class="${up?'text-success-mv':'text-danger-mv'}" style="font-size:.75rem;"><i class="bi bi-arrow-${up?'up':'down'}-right"></i> ${pct.toFixed(2).replace('.',',')}%</span></div>
-        <div class="stat-value">${fBRL(bid)}${it.unit ? '<span class="text-muted-mv" style="font-size:.7rem;font-weight:400;"> /'+it.unit+'</span>' : ''}</div>
-        <div class="stat-sub">${sub}</div></div></div></div></div>`;
+      const sub = it.unit ? fBRL(bid / OZ) + ' / g' : 'Máx ' + fBRL(q.high) + ' · Mín ' + fBRL(q.low);
+
+      html += '<div class="col-sm-6 col-lg-4"><div class="card"><div class="quote-card">' +
+        '<div class="d-flex justify-content-between align-items-center mb-1">' +
+          '<span class="q-label"><i class="bi ' + it.icon + ' me-1"></i>' + it.label + '</span>' +
+          '<span class="q-pct ' + (up ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (up ? 'up' : 'down') + '-right"></i> ' + pct.toFixed(2).replace('.', ',') + '%</span>' +
+        '</div>' +
+        '<div class="q-value">' + fBRL(bid) + (it.unit ? '<span class="q-unit">/' + it.unit + '</span>' : '') + '</div>' +
+        '<div class="q-sub">' + sub + '</div>' +
+      '</div></div></div>';
     });
     document.getElementById('quotes-container').innerHTML = html;
     document.getElementById('quote-time').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
   })
-  .catch(() => { document.getElementById('quotes-container').innerHTML = '<div class="col-12 text-muted-mv">Erro ao carregar cotações.</div>'; });
+  .catch(() => {
+    document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#b0b4c8;">Erro ao carregar cotações.</div>';
+  });
 
-// Valuation
+// ── Valorização do inventário ──
 fetch('/api/valuation/')
   .then(r => r.json())
   .then(data => {
     if (!data.rows || data.rows.length === 0) return;
     const card = document.getElementById('valuation-card');
     const delta = data.total_current - data.total_acquisition;
-    const pct = data.total_acquisition > 0 ? ((delta / data.total_acquisition) * 100).toFixed(2).replace('.',',') : '0,00';
+    const pct = data.total_acquisition > 0 ? ((delta / data.total_acquisition) * 100).toFixed(2).replace('.', ',') : '0,00';
     const up = delta >= 0;
-    let rowsHtml = data.rows.map(r => `<tr>
-      <td class="fw-medium">${r.label}</td>
-      <td class="text-end tabular-nums">${fGrams(r.grams)}</td>
-      <td class="text-end tabular-nums text-muted-mv">${fGrams(r.pure_grams)}</td>
-      <td class="text-end tabular-nums">${r.has_price ? fBRL(r.spot_per_gram) : '—'}</td>
-      <td class="text-end tabular-nums">${fBRL(r.acquisition)}</td>
-      <td class="text-end tabular-nums fw-semibold text-primary-mv">${r.has_price ? fBRL(r.current) : '<span class="text-muted-mv">sem cotação</span>'}</td>
-    </tr>`).join('');
-    card.innerHTML = `<div class="card-header py-3 d-flex justify-content-between align-items-center">
-      <h6 class="mb-0"><i class="bi bi-graph-up-arrow text-primary-mv me-2"></i>Valor atualizado do inventário</h6>
-      <span class="text-muted-mv" style="font-size:.7rem;">Baseado nas cotações ao vivo</span></div>
-      <div class="card-body">
-        <div class="row g-3 mb-3">
-          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Valor de aquisição</div><div class="stat-value">${fBRL(data.total_acquisition)}</div></div></div>
-          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Valor atual estimado</div><div class="stat-value text-primary-mv">${fBRL(data.total_current)}</div></div></div>
-          <div class="col-sm-4"><div class="rounded border border-mv p-3"><div class="stat-label">Variação</div><div class="stat-value ${up?'text-success-mv':'text-danger-mv'}">${up?'+':''}${fBRL(delta)}</div><div class="stat-sub ${up?'text-success-mv':'text-danger-mv'}">${up?'+':''}${pct}%</div></div></div>
-        </div>
-        <div class="table-responsive"><table class="table table-sm mb-2"><thead><tr>
-          <th>Material</th><th class="text-end">Peso bruto</th><th class="text-end">Peso fino</th><th class="text-end">Preço/g</th><th class="text-end">Aquisição</th><th class="text-end">Valor atual</th>
-        </tr></thead><tbody>${rowsHtml}</tbody></table></div>
-        <p class="text-muted-mv mb-0" style="font-size:.75rem;">Cálculo: peso (g) × pureza × preço da grama.</p>
-      </div>`;
+    const cls = up ? 'positive' : 'negative';
+
+    let rowsHtml = data.rows.map(r =>
+      '<tr>' +
+        '<td class="mat-name">' + r.label + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + fGrams(r.grams) + '</td>' +
+        '<td class="text-end tabular-nums dim">' + fGrams(r.pure_grams) + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + (r.has_price ? fBRL(r.spot_per_gram) : '<span class="dim">—</span>') + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + fBRL(r.acquisition) + '</td>' +
+        '<td class="text-end tabular-nums highlight">' + (r.has_price ? fBRL(r.current) : '<span class="no-data">sem cotação</span>') + '</td>' +
+      '</tr>'
+    ).join('');
+
+    card.innerHTML =
+      '<div class="card-header py-3 d-flex justify-content-between align-items-center">' +
+        '<h6 class="mb-0" style="color:#ffffff;"><i class="bi bi-graph-up-arrow me-2" style="color:var(--mv-primary);"></i>Valor atualizado do inventário</h6>' +
+        '<span style="font-size:.7rem;color:#9ea2b6;">Baseado nas cotações ao vivo</span>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="row g-3 mb-3">' +
+          '<div class="col-sm-4"><div class="val-box"><div class="val-label">Valor de aquisição</div><div class="val-num">' + fBRL(data.total_acquisition) + '</div></div></div>' +
+          '<div class="col-sm-4"><div class="val-box"><div class="val-label">Valor atual estimado</div><div class="val-num accent">' + fBRL(data.total_current) + '</div></div></div>' +
+          '<div class="col-sm-4"><div class="val-box"><div class="val-label">Variação</div><div class="val-num ' + cls + '">' + (up ? '+' : '') + fBRL(delta) + '</div><div class="val-sub ' + cls + '">' + (up ? '+' : '') + pct + '%</div></div></div>' +
+        '</div>' +
+        '<div class="table-responsive"><table class="table val-table table-sm mb-2"><thead><tr>' +
+          '<th>Material</th><th class="text-end">Peso bruto</th><th class="text-end">Peso fino</th><th class="text-end">Preço/g</th><th class="text-end">Aquisição</th><th class="text-end">Valor atual</th>' +
+        '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+        '<p style="font-size:.72rem;color:#9ea2b6;" class="mb-0">Cálculo: peso (g) × pureza × preço da grama. Materiais sem cotação não entram no total.</p>' +
+      '</div>';
     card.style.display = 'block';
   });
 
-// Chart
+// ── Gráfico ──
 const chartData = {{ chart_data|safe }};
 if (chartData.length > 0) {
-  new Chart(document.getElementById('chart'), {
+  const ctx = document.getElementById('chart');
+  const materialColors = {
+    'Ouro': { bg: 'rgba(255, 215, 0, 0.75)', border: 'rgba(255, 215, 0, 1)' },
+    'Prata': { bg: 'rgba(192, 192, 192, 0.75)', border: 'rgba(192, 192, 192, 1)' },
+    'Platina': { bg: 'rgba(229, 228, 226, 0.65)', border: 'rgba(229, 228, 226, 1)' },
+  };
+  const defaultColor = { bg: 'rgba(201, 169, 78, 0.55)', border: 'rgba(201, 169, 78, 1)' };
+
+  const bgColors = chartData.map(d => (materialColors[d.name] || defaultColor).bg);
+  const borderColors = chartData.map(d => (materialColors[d.name] || defaultColor).border);
+
+  // Largura proporcional: quanto mais materiais, mais finas as barras
+  const count = chartData.length;
+  let barPct, catPct, maxThick;
+  if (count <= 1)       { barPct = 0.35; catPct = 0.4;  maxThick = 90;  }
+  else if (count === 2) { barPct = 0.45; catPct = 0.5;  maxThick = 80;  }
+  else if (count === 3) { barPct = 0.55; catPct = 0.6;  maxThick = 70;  }
+  else if (count === 4) { barPct = 0.6;  catPct = 0.65; maxThick = 60;  }
+  else                  { barPct = 0.7;  catPct = 0.75; maxThick = 50;  }
+
+  new Chart(ctx, {
     type: 'bar',
     data: {
       labels: chartData.map(d => d.name),
-      datasets: [{ label: 'Gramas', data: chartData.map(d => d.grams), backgroundColor: 'rgba(201,169,78,.7)', borderRadius: 6 }]
+      datasets: [{
+        label: 'Gramas',
+        data: chartData.map(d => d.grams),
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 6,
+        maxBarThickness: maxThick,
+        barPercentage: barPct,
+        categoryPercentage: catPct,
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: { left: 4, right: 4, top: 8, bottom: 4 }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          titleColor: '#ffffff',
+          bodyColor: '#dcdfe8',
+          borderColor: '#2e3345',
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(ctx) {
+              return ctx.parsed.y.toFixed(2).replace('.', ',') + ' g';
+            }
+          }
+        }
+      },
       scales: {
-        x: { ticks: { color: '#8b8fa3' }, grid: { color: 'rgba(46,51,69,.5)' } },
-        y: { ticks: { color: '#8b8fa3' }, grid: { color: 'rgba(46,51,69,.5)' } }
+        x: {
+          ticks: { color: '#b0b4c8', font: { size: 12, weight: '600' } },
+          grid: { display: false },
+          border: { color: 'rgba(46,51,69,.5)' }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#b0b4c8',
+            font: { size: 11 },
+            callback: function(v) { return v.toLocaleString('pt-BR') + ' g'; }
+          },
+          grid: { color: 'rgba(46,51,69,.35)', lineWidth: 1 },
+          border: { display: false }
+        }
       }
     }
   });

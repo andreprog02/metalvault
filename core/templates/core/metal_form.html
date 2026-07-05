@@ -4,501 +4,809 @@
 
 {% block extra_css %}
 <style>
-  .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .5rem; }
-  .type-option {
-    position: relative; cursor: pointer;
-    border: 2px solid var(--mv-border); border-radius: .75rem;
-    padding: 1rem .75rem; text-align: center;
-    transition: all .2s; background: var(--mv-surface2);
-  }
-  .type-option:hover { border-color: var(--mv-muted); }
-  .type-option.selected { border-color: var(--mv-primary); background: var(--mv-primary-soft); }
-  .type-option .type-icon { font-size: 1.75rem; margin-bottom: .35rem; display: block; }
-  .type-option .type-name { font-size: .8rem; font-weight: 600; color: var(--mv-text); }
-  .type-option.selected .type-name { color: var(--mv-primary); }
-  .type-option input { position: absolute; opacity: 0; pointer-events: none; }
+/* ══════════════════════════════════════
+   WIZARD LAYOUT
+   ══════════════════════════════════════ */
+.wizard-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+}
 
-  .custom-type-panel {
-    border: 2px dashed var(--mv-border); border-radius: .75rem;
-    padding: 1.25rem; background: var(--mv-surface2);
-    animation: fadeSlide .25s ease;
-  }
-  @keyframes fadeSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+/* ── Progress bar ── */
+.wizard-progress {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 2rem; padding: 0 1rem;
+}
+.wp-step { display: flex; align-items: center; }
+.wp-dot {
+  width: 2.25rem; height: 2.25rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; border: 2px solid var(--mv-border);
+  background: var(--mv-surface); color: #5c6078;
+  transition: all .35s ease; cursor: pointer; position: relative; z-index: 2;
+  flex-shrink: 0;
+}
+.wp-dot.active { border-color: var(--mv-primary); background: var(--mv-primary); color: #111; }
+.wp-dot.done { border-color: var(--mv-primary); background: var(--mv-primary-soft); color: var(--mv-primary); }
+.wp-dot.done::after { content: '✓'; }
+.wp-dot.active::after, .wp-dot:not(.done)::after { content: attr(data-num); }
+.wp-label {
+  display: none; position: absolute; top: calc(100% + .35rem);
+  font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  color: #787c90; white-space: nowrap;
+}
+.wp-dot.active .wp-label, .wp-dot.done .wp-label { display: block; }
+.wp-dot.active .wp-label { color: var(--mv-primary); }
+.wp-line {
+  width: 2.5rem; height: 2px; background: var(--mv-border);
+  transition: background .35s ease; flex-shrink: 0;
+}
+.wp-line.filled { background: var(--mv-primary); }
 
-  .field-group { position: relative; }
-  .field-group .field-hint {
-    font-size: .7rem; color: var(--mv-muted); margin-top: .25rem;
-  }
-  .field-group .input-prefix {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    display: flex; align-items: center; padding: 0 .75rem;
-    color: var(--mv-muted); font-size: .875rem; font-weight: 600;
-    pointer-events: none; border-right: 1px solid var(--mv-border);
-    background: rgba(35,39,51,.5); border-radius: .375rem 0 0 .375rem;
-  }
-  .field-group .input-suffix {
-    position: absolute; right: 0; top: 0; bottom: 0;
-    display: flex; align-items: center; padding: 0 .75rem;
-    color: var(--mv-muted); font-size: .8rem; font-weight: 500;
-    pointer-events: none;
-  }
-  .field-group .has-prefix { padding-left: 3.25rem; }
-  .field-group .has-suffix { padding-right: 3rem; }
+/* ── Step panel ── */
+.wizard-step { display: none; animation: stepIn .35s ease; }
+.wizard-step.active { display: block; }
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
-  .file-upload-area {
-    border: 2px dashed var(--mv-border); border-radius: .75rem;
-    padding: 1.5rem; text-align: center; cursor: pointer;
-    transition: all .2s; background: var(--mv-surface2);
-    position: relative; overflow: hidden;
-  }
-  .file-upload-area:hover { border-color: var(--mv-primary); background: var(--mv-primary-soft); }
-  .file-upload-area input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-  .file-upload-area .upload-icon { font-size: 1.5rem; color: var(--mv-muted); margin-bottom: .25rem; }
-  .file-upload-area .upload-label { font-size: .8rem; font-weight: 600; color: var(--mv-text); }
-  .file-upload-area .upload-hint { font-size: .7rem; color: var(--mv-muted); }
-  .file-upload-area.has-file { border-color: var(--mv-primary); border-style: solid; }
-  .file-upload-area.has-file .upload-icon { color: var(--mv-primary); }
+/* ── Step header ── */
+.step-header { text-align: center; margin-bottom: 2rem; }
+.step-header .step-title { font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: .25rem; }
+.step-header .step-desc { font-size: .875rem; color: #9ea2b6; }
 
-  .troy-oz-display {
-    display: inline-block; padding: .2rem .6rem;
-    background: var(--mv-primary-soft); border-radius: .375rem;
-    font-size: .75rem; font-weight: 600; color: var(--mv-primary);
-    margin-top: .35rem;
-  }
+/* ── Selection grid ── */
+.sel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; max-width: 480px; margin: 0 auto; }
+@media (min-width: 576px) { .sel-grid.four { grid-template-columns: repeat(4, 1fr); } }
+.sel-card {
+  position: relative; cursor: pointer;
+  border: 2px solid var(--mv-border); border-radius: 1rem;
+  padding: 1.5rem 1rem; text-align: center;
+  transition: all .2s; background: var(--mv-surface);
+}
+.sel-card:hover { border-color: #4a4f65; background: var(--mv-surface2); }
+.sel-card.selected { border-color: var(--mv-primary); background: rgba(201,169,78,.08); box-shadow: 0 0 0 1px var(--mv-primary); }
+.sel-card input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.sel-card .sel-icon { font-size: 2.25rem; margin-bottom: .5rem; display: block; line-height: 1; }
+.sel-card .sel-name { font-size: .85rem; font-weight: 700; color: #dcdfe8; }
+.sel-card.selected .sel-name { color: var(--mv-primary); }
+.sel-card .sel-sub { font-size: .68rem; color: #787c90; margin-top: .15rem; }
+.sel-card.selected .sel-sub { color: #b0a46a; }
+.sel-card.add-new { border-style: dashed; }
+.sel-card.add-new .sel-icon { color: #5c6078; }
+.sel-card.add-new:hover .sel-icon, .sel-card.add-new.selected .sel-icon { color: var(--mv-primary); }
 
-  .section-number {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 1.75rem; height: 1.75rem; border-radius: 50%;
-    background: var(--mv-primary); color: #111; font-weight: 700;
-    font-size: .8rem; margin-right: .5rem;
-  }
+/* ── Custom panel ── */
+.custom-panel {
+  max-width: 480px; margin: 1rem auto 0;
+  border: 2px dashed var(--mv-border); border-radius: .75rem;
+  padding: 1.25rem; background: var(--mv-surface);
+  animation: stepIn .25s ease;
+}
+.custom-panel label { font-size: .85rem; font-weight: 600; color: #dcdfe8; margin-bottom: .5rem; display: block; }
+.custom-panel .hint { font-size: .72rem; color: #787c90; margin-top: .35rem; }
+
+/* ── Field rows ── */
+.field-row { max-width: 540px; margin: 0 auto; }
+.field-card {
+  background: var(--mv-surface); border: 1px solid var(--mv-border);
+  border-radius: .75rem; padding: 1.25rem; margin-bottom: 1rem;
+}
+.field-card .f-label { font-size: .78rem; font-weight: 700; color: #b0b4c8; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .5rem; }
+.field-card .f-hint { font-size: .72rem; color: #787c90; margin-top: .35rem; }
+.field-card .f-error { font-size: .78rem; color: #f87171; margin-top: .25rem; }
+.field-card .form-control, .field-card .form-select {
+  background: var(--mv-surface2); border: 1px solid var(--mv-border); color: #ffffff;
+  font-size: .95rem; padding: .6rem .85rem; border-radius: .5rem;
+}
+.field-card .form-control:focus, .field-card .form-select:focus {
+  border-color: var(--mv-primary); box-shadow: 0 0 0 .15rem rgba(201,169,78,.12); background: var(--mv-surface2); color: #ffffff;
+}
+.field-card .form-control::placeholder { color: #5c6078; }
+
+/* Input with prefix/suffix */
+.input-wrap { position: relative; }
+.input-wrap .prefix {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: flex; align-items: center; padding: 0 .75rem;
+  color: #9ea2b6; font-size: .85rem; font-weight: 700;
+  pointer-events: none; border-right: 1px solid var(--mv-border);
+  background: rgba(35,39,51,.6); border-radius: .5rem 0 0 .5rem;
+}
+.input-wrap .suffix {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  display: flex; align-items: center; padding: 0 .85rem;
+  color: #9ea2b6; font-size: .82rem; font-weight: 600; pointer-events: none;
+}
+.input-wrap .has-prefix { padding-left: 3.25rem; }
+.input-wrap .has-suffix { padding-right: 2.75rem; }
+
+/* Troy oz badge */
+.troy-badge {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .2rem .65rem; border-radius: .375rem; margin-top: .4rem;
+  background: var(--mv-primary-soft); font-size: .75rem; font-weight: 700; color: var(--mv-primary);
+}
+
+/* ── File upload areas ── */
+.upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+@media (max-width: 576px) { .upload-grid { grid-template-columns: 1fr; } }
+.upload-area {
+  border: 2px dashed var(--mv-border); border-radius: .75rem;
+  padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--mv-surface); position: relative; overflow: hidden;
+}
+.upload-area:hover { border-color: var(--mv-primary); background: rgba(201,169,78,.04); }
+.upload-area.has-file { border-color: var(--mv-primary); border-style: solid; background: rgba(201,169,78,.06); }
+.upload-area .u-icon { font-size: 1.5rem; color: #5c6078; margin-bottom: .35rem; transition: color .2s; }
+.upload-area:hover .u-icon, .upload-area.has-file .u-icon { color: var(--mv-primary); }
+.upload-area .u-label { font-size: .8rem; font-weight: 700; color: #dcdfe8; }
+.upload-area.has-file .u-label { color: var(--mv-primary); }
+.upload-area .u-hint { font-size: .68rem; color: #5c6078; margin-top: .15rem; }
+.upload-area .u-file-name { font-size: .7rem; color: var(--mv-primary); margin-top: .25rem; word-break: break-all; }
+
+.upload-extras {
+  border: 2px dashed var(--mv-border); border-radius: .75rem;
+  padding: 1.25rem; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--mv-surface); position: relative; overflow: hidden;
+  margin-top: .75rem;
+}
+.upload-extras:hover { border-color: var(--mv-primary); }
+.upload-extras.has-file { border-color: var(--mv-primary); border-style: solid; }
+.extras-preview { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin-top: .75rem; }
+.extras-preview .thumb {
+  width: 56px; height: 56px; border-radius: .5rem; overflow: hidden;
+  border: 1px solid var(--mv-border);
+}
+.extras-preview .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Review panel ── */
+.review-grid { max-width: 540px; margin: 0 auto; }
+.review-card {
+  background: var(--mv-surface); border: 1px solid var(--mv-border);
+  border-radius: .75rem; padding: 1.25rem; margin-bottom: .75rem;
+}
+.review-card .r-title {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: #787c90; margin-bottom: .75rem; display: flex; align-items: center; gap: .4rem;
+}
+.review-card .r-title i { color: var(--mv-primary); }
+.review-row { display: flex; justify-content: space-between; align-items: center; padding: .35rem 0; }
+.review-row:not(:last-child) { border-bottom: 1px solid rgba(46,51,69,.3); }
+.review-row .r-label { font-size: .82rem; color: #9ea2b6; }
+.review-row .r-value { font-size: .88rem; font-weight: 600; color: #ffffff; }
+.review-row .r-value.accent { color: var(--mv-primary); font-weight: 700; }
+.review-row .r-value .r-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .1rem .5rem; border-radius: .3rem; font-size: .78rem;
+  background: var(--mv-surface2); border: 1px solid var(--mv-border);
+}
+
+/* ── Nav buttons ── */
+.wizard-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  max-width: 540px; margin: 1.5rem auto 0; padding-top: 1rem;
+  border-top: 1px solid var(--mv-border);
+}
+.btn-wiz {
+  padding: .6rem 1.5rem; border-radius: .5rem; font-size: .85rem; font-weight: 700;
+  border: none; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: .4rem;
+}
+.btn-wiz-back { background: transparent; color: #9ea2b6; border: 1px solid var(--mv-border); }
+.btn-wiz-back:hover { background: var(--mv-surface2); color: #dcdfe8; }
+.btn-wiz-next { background: var(--mv-primary); color: #111; }
+.btn-wiz-next:hover { background: #dfc06a; }
+.btn-wiz-submit { background: var(--mv-primary); color: #111; font-size: .95rem; }
+.btn-wiz-submit:hover { background: #dfc06a; }
+.btn-skip {
+  background: transparent; color: #787c90; border: none; font-size: .8rem; cursor: pointer;
+  padding: .4rem .75rem; border-radius: .375rem;
+}
+.btn-skip:hover { color: #b0b4c8; background: var(--mv-surface2); }
+
+/* ── Validation shake ── */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-6px); }
+  40%,80% { transform: translateX(6px); }
+}
+.shake { animation: shake .4s ease; }
+.field-card.has-error { border-color: #f87171; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="mb-4">
-  <a href="{% url 'inventory' %}" class="text-muted-mv" style="font-size:.85rem;"><i class="bi bi-chevron-left"></i> Inventário</a>
-  <h1 class="fw-bold mt-2" style="font-size:1.75rem;">{% if is_edit %}Editar metal{% else %}Cadastrar novo item{% endif %}</h1>
-  <p class="text-muted-mv" style="font-size:.875rem;">{% if is_edit %}Atualize os dados do seu item{% else %}Preencha os dados para adicionar ao seu acervo{% endif %}</p>
-</div>
+<div class="wizard-wrapper">
 
-<form method="post" enctype="multipart/form-data" id="metalForm">
-  {% csrf_token %}
+  <div class="mb-3">
+    <a href="{% url 'inventory' %}" style="font-size:.82rem; color:#9ea2b6; text-decoration:none;">
+      <i class="bi bi-arrow-left me-1"></i> Voltar ao inventário
+    </a>
+  </div>
 
-  <!-- ═══════ SEÇÃO 1: TIPO ═══════ -->
-  <div class="card mb-4">
-    <div class="card-header py-3">
-      <h6 class="mb-0"><span class="section-number">1</span> Que tipo de item é este?</h6>
-    </div>
-    <div class="card-body">
-      <div class="type-grid mb-3" id="typeGrid">
-        <label class="type-option" data-value="bar">
-          <input type="radio" name="type" value="bar" {% if form.type.value == 'bar' or not form.type.value %}checked{% endif %}>
-          <span class="type-icon">🪙</span>
-          <span class="type-name">Barra</span>
+  <!-- ══════ PROGRESS BAR ══════ -->
+  <div class="wizard-progress" id="wizProgress">
+    <div class="wp-step"><div class="wp-dot active" data-step="0" data-num="1"><span class="wp-label">Tipo</span></div></div>
+    <div class="wp-line" data-line="0"></div>
+    <div class="wp-step"><div class="wp-dot" data-step="1" data-num="2"><span class="wp-label">Material</span></div></div>
+    <div class="wp-line" data-line="1"></div>
+    <div class="wp-step"><div class="wp-dot" data-step="2" data-num="3"><span class="wp-label">Medidas</span></div></div>
+    <div class="wp-line" data-line="2"></div>
+    <div class="wp-step"><div class="wp-dot" data-step="3" data-num="4"><span class="wp-label">Aquisição</span></div></div>
+    <div class="wp-line" data-line="3"></div>
+    <div class="wp-step"><div class="wp-dot" data-step="4" data-num="5"><span class="wp-label">Fotos</span></div></div>
+    <div class="wp-line" data-line="4"></div>
+    <div class="wp-step"><div class="wp-dot" data-step="5" data-num="6"><span class="wp-label">Revisão</span></div></div>
+  </div>
+
+  <!-- novalidate: validation is handled per-step in JS -->
+  <form method="post" enctype="multipart/form-data" id="metalForm" novalidate>
+    {% csrf_token %}
+
+    <!-- Hidden selects that Django expects (radios replace them visually) -->
+    <input type="hidden" name="type" id="hiddenType" value="{{ form.type.value|default:'bar' }}">
+    <input type="hidden" name="material" id="hiddenMaterial" value="{{ form.material.value|default:'gold' }}">
+
+    <!-- ══════ STEP 0: TIPO ══════ -->
+    <div class="wizard-step active" data-step="0">
+      <div class="step-header">
+        <div class="step-title">Que tipo de item é este?</div>
+        <div class="step-desc">Selecione a categoria que melhor descreve o item</div>
+      </div>
+      <div class="sel-grid four" id="typeGrid">
+        <label class="sel-card {% if form.type.value == 'bar' or not form.type.value %}selected{% endif %}" data-value="bar">
+          <input type="radio" name="_type_radio" value="bar" {% if form.type.value == 'bar' or not form.type.value %}checked{% endif %}>
+          <span class="sel-icon">🪙</span>
+          <span class="sel-name">Barra</span>
+          <span class="sel-sub">Lingote / barra</span>
         </label>
-        <label class="type-option" data-value="coin">
-          <input type="radio" name="type" value="coin" {% if form.type.value == 'coin' %}checked{% endif %}>
-          <span class="type-icon">🥇</span>
-          <span class="type-name">Moeda</span>
+        <label class="sel-card {% if form.type.value == 'coin' %}selected{% endif %}" data-value="coin">
+          <input type="radio" name="_type_radio" value="coin" {% if form.type.value == 'coin' %}checked{% endif %}>
+          <span class="sel-icon">🥇</span>
+          <span class="sel-name">Moeda</span>
+          <span class="sel-sub">Moeda cunhada</span>
         </label>
-        <label class="type-option" data-value="medal">
-          <input type="radio" name="type" value="medal" {% if form.type.value == 'medal' %}checked{% endif %}>
-          <span class="type-icon">🏅</span>
-          <span class="type-name">Medalha</span>
+        <label class="sel-card {% if form.type.value == 'medal' %}selected{% endif %}" data-value="medal">
+          <input type="radio" name="_type_radio" value="medal" {% if form.type.value == 'medal' %}checked{% endif %}>
+          <span class="sel-icon">🏅</span>
+          <span class="sel-name">Medalha</span>
+          <span class="sel-sub">Comemorativa</span>
         </label>
-        <label class="type-option" data-value="other">
-          <input type="radio" name="type" value="other" {% if form.type.value == 'other' %}checked{% endif %}>
-          <span class="type-icon"><i class="bi bi-plus-circle" style="font-size:1.75rem;"></i></span>
-          <span class="type-name">Outro tipo</span>
+        <label class="sel-card add-new {% if form.type.value == 'other' %}selected{% endif %}" data-value="other">
+          <input type="radio" name="_type_radio" value="other" {% if form.type.value == 'other' %}checked{% endif %}>
+          <span class="sel-icon"><i class="bi bi-plus-circle-dotted" style="font-size:2.25rem;"></i></span>
+          <span class="sel-name">Outro</span>
+          <span class="sel-sub">Tipo personalizado</span>
         </label>
       </div>
-
-      <div id="customTypePanel" class="custom-type-panel" style="display:none;">
-        <label class="form-label" style="font-size:.85rem;"><i class="bi bi-pencil-square me-1"></i> Qual o nome deste tipo de item?</label>
+      <div class="custom-panel" id="customTypePanel" style="{% if form.type.value != 'other' %}display:none;{% endif %}">
+        <label><i class="bi bi-pencil-square me-1" style="color:var(--mv-primary);"></i> Nome do tipo</label>
         {{ form.type_custom_label }}
-        <div class="field-hint mt-1">Exemplos: Pingente, Joia, Lingote, Pepita, Broche</div>
+        <div class="hint">Ex: Pingente, Joia, Pepita, Broche, Lingote decorativo</div>
       </div>
-      {% if form.type.errors %}<div class="text-danger-mv mt-2" style="font-size:.8rem;">{{ form.type.errors.0 }}</div>{% endif %}
     </div>
-  </div>
 
-  <!-- ═══════ SEÇÃO 2: MATERIAL ═══════ -->
-  <div class="card mb-4">
-    <div class="card-header py-3">
-      <h6 class="mb-0"><span class="section-number">2</span> De qual material?</h6>
-    </div>
-    <div class="card-body">
-      <div class="type-grid mb-3" id="materialGrid">
-        <label class="type-option" data-value="gold">
-          <input type="radio" name="material" value="gold" {% if form.material.value == 'gold' or not form.material.value %}checked{% endif %}>
-          <span class="type-icon" style="color:#FFD700;">●</span>
-          <span class="type-name">Ouro</span>
+    <!-- ══════ STEP 1: MATERIAL ══════ -->
+    <div class="wizard-step" data-step="1">
+      <div class="step-header">
+        <div class="step-title">De qual material?</div>
+        <div class="step-desc">Escolha o metal ou material do item</div>
+      </div>
+      <div class="sel-grid four" id="materialGrid">
+        <label class="sel-card {% if form.material.value == 'gold' or not form.material.value %}selected{% endif %}" data-value="gold">
+          <input type="radio" name="_material_radio" value="gold" {% if form.material.value == 'gold' or not form.material.value %}checked{% endif %}>
+          <span class="sel-icon" style="color:#FFD700;">●</span>
+          <span class="sel-name">Ouro</span>
+          <span class="sel-sub">Au — Gold</span>
         </label>
-        <label class="type-option" data-value="silver">
-          <input type="radio" name="material" value="silver" {% if form.material.value == 'silver' %}checked{% endif %}>
-          <span class="type-icon" style="color:#C0C0C0;">●</span>
-          <span class="type-name">Prata</span>
+        <label class="sel-card {% if form.material.value == 'silver' %}selected{% endif %}" data-value="silver">
+          <input type="radio" name="_material_radio" value="silver" {% if form.material.value == 'silver' %}checked{% endif %}>
+          <span class="sel-icon" style="color:#C0C0C0;">●</span>
+          <span class="sel-name">Prata</span>
+          <span class="sel-sub">Ag — Silver</span>
         </label>
-        <label class="type-option" data-value="platinum">
-          <input type="radio" name="material" value="platinum" {% if form.material.value == 'platinum' %}checked{% endif %}>
-          <span class="type-icon" style="color:#E5E4E2;">●</span>
-          <span class="type-name">Platina</span>
+        <label class="sel-card {% if form.material.value == 'platinum' %}selected{% endif %}" data-value="platinum">
+          <input type="radio" name="_material_radio" value="platinum" {% if form.material.value == 'platinum' %}checked{% endif %}>
+          <span class="sel-icon" style="color:#E5E4E2;">●</span>
+          <span class="sel-name">Platina</span>
+          <span class="sel-sub">Pt — Platinum</span>
         </label>
-        <label class="type-option" data-value="other">
-          <input type="radio" name="material" value="other" {% if form.material.value == 'other' %}checked{% endif %}>
-          <span class="type-icon"><i class="bi bi-plus-circle" style="font-size:1.75rem;"></i></span>
-          <span class="type-name">Outro</span>
+        <label class="sel-card add-new {% if form.material.value == 'other' %}selected{% endif %}" data-value="other">
+          <input type="radio" name="_material_radio" value="other" {% if form.material.value == 'other' %}checked{% endif %}>
+          <span class="sel-icon"><i class="bi bi-plus-circle-dotted" style="font-size:2.25rem;"></i></span>
+          <span class="sel-name">Outro</span>
+          <span class="sel-sub">Personalizado</span>
         </label>
       </div>
-
-      <div id="customMaterialPanel" class="custom-type-panel" style="display:none;">
-        <label class="form-label" style="font-size:.85rem;"><i class="bi bi-pencil-square me-1"></i> Qual o nome do material?</label>
+      <div class="custom-panel" id="customMaterialPanel" style="{% if form.material.value != 'other' %}display:none;{% endif %}">
+        <label><i class="bi bi-pencil-square me-1" style="color:var(--mv-primary);"></i> Nome do material</label>
         {{ form.material_custom_label }}
-        <div class="field-hint mt-1">Exemplos: Paládio, Ródio, Cobre, Bronze, Titânio</div>
+        <div class="hint">Ex: Paládio, Ródio, Cobre, Bronze, Titânio</div>
       </div>
-      {% if form.material.errors %}<div class="text-danger-mv mt-2" style="font-size:.8rem;">{{ form.material.errors.0 }}</div>{% endif %}
     </div>
-  </div>
 
-  <!-- ═══════ SEÇÃO 3: MEDIDAS ═══════ -->
-  <div class="card mb-4">
-    <div class="card-header py-3">
-      <h6 class="mb-0"><span class="section-number">3</span> Especificações</h6>
-    </div>
-    <div class="card-body">
-      <div class="row g-4">
-        <div class="col-sm-6">
-          <label class="form-label">Pureza</label>
-          <div class="field-group">
-            {{ form.purity_percentage }}
-            <span class="input-suffix">%</span>
+    <!-- ══════ STEP 2: ESPECIFICAÇÕES ══════ -->
+    <div class="wizard-step" data-step="2">
+      <div class="step-header">
+        <div class="step-title">Especificações</div>
+        <div class="step-desc">Peso, pureza e identificação do item</div>
+      </div>
+      <div class="field-row">
+        <div class="d-flex gap-3">
+          <div class="field-card flex-fill" id="fc-weight">
+            <div class="f-label">Peso</div>
+            <div class="input-wrap">
+              {{ form.weight_grams }}
+              <span class="suffix">g</span>
+            </div>
+            <div id="troyBadge" class="troy-badge" style="display:none;"></div>
+            <div class="f-hint">Peso bruto em gramas</div>
           </div>
-          <div class="field-hint">Percentual de pureza do metal. Ex: 99,9% para ouro 24k</div>
-          {% if form.purity_percentage.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.purity_percentage.errors.0 }}</div>{% endif %}
-        </div>
-
-        <div class="col-sm-6">
-          <label class="form-label">Peso</label>
-          <div class="field-group">
-            {{ form.weight_grams }}
-            <span class="input-suffix">g</span>
+          <div class="field-card flex-fill" id="fc-purity">
+            <div class="f-label">Pureza</div>
+            <div class="input-wrap">
+              {{ form.purity_percentage }}
+              <span class="suffix">%</span>
+            </div>
+            <div class="f-hint">Ex: 99,9% = ouro 24k</div>
           </div>
-          <div id="troyOzDisplay" class="troy-oz-display" style="display:none;"></div>
-          <div class="field-hint">Peso bruto em gramas. A conversão para onça troy é automática</div>
-          {% if form.weight_grams.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.weight_grams.errors.0 }}</div>{% endif %}
         </div>
-
-        <div class="col-sm-6">
-          <label class="form-label">Número de série</label>
-          {{ form.serial_number }}
-          <div class="field-hint">Gravado no item ou certificado (opcional)</div>
-        </div>
-
-        <div class="col-sm-6">
-          <label class="form-label">Número da Nota Fiscal</label>
-          {{ form.invoice_number }}
-          <div class="field-hint">Número da NF de compra (opcional)</div>
+        <div class="d-flex gap-3">
+          <div class="field-card flex-fill">
+            <div class="f-label">Nº de série <span style="color:#5c6078;font-weight:400;text-transform:none;">(opcional)</span></div>
+            {{ form.serial_number }}
+            <div class="f-hint">Gravado no item ou certificado</div>
+          </div>
+          <div class="field-card flex-fill">
+            <div class="f-label">Nº da Nota Fiscal <span style="color:#5c6078;font-weight:400;text-transform:none;">(opcional)</span></div>
+            {{ form.invoice_number }}
+            <div class="f-hint">Número da NF de compra</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ═══════ SEÇÃO 4: AQUISIÇÃO ═══════ -->
-  <div class="card mb-4">
-    <div class="card-header py-3">
-      <h6 class="mb-0"><span class="section-number">4</span> Dados da aquisição</h6>
-    </div>
-    <div class="card-body">
-      <div class="row g-4">
-        <div class="col-sm-6">
-          <label class="form-label">Valor pago</label>
-          <div class="field-group">
-            <span class="input-prefix">R$</span>
-            <input type="text"
-                   name="acquisition_value"
-                   id="id_acquisition_value"
+    <!-- ══════ STEP 3: AQUISIÇÃO ══════ -->
+    <div class="wizard-step" data-step="3">
+      <div class="step-header">
+        <div class="step-title">Dados da aquisição</div>
+        <div class="step-desc">Quando e por quanto o item foi adquirido</div>
+      </div>
+      <div class="field-row">
+        <div class="field-card" id="fc-value">
+          <div class="f-label">Valor pago</div>
+          <div class="input-wrap">
+            <span class="prefix">R$</span>
+            <input type="text" name="acquisition_value" id="id_acquisition_value"
                    class="form-control has-prefix brl-input"
                    value="{{ form.acquisition_value.value|default:'' }}"
-                   placeholder="0,00"
-                   inputmode="decimal"
-                   required>
+                   placeholder="0,00" inputmode="decimal">
           </div>
-          <div class="field-hint">Valor total de aquisição em reais</div>
-          {% if form.acquisition_value.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.acquisition_value.errors.0 }}</div>{% endif %}
+          <div class="f-hint">Valor total em reais na data da compra</div>
         </div>
-
-        <div class="col-sm-6">
-          <label class="form-label">Data da compra</label>
-          {{ form.acquisition_date }}
-          <div class="field-hint">Quando o item foi adquirido</div>
-          {% if form.acquisition_date.errors %}<div class="text-danger-mv" style="font-size:.8rem;">{{ form.acquisition_date.errors.0 }}</div>{% endif %}
-        </div>
-
-        <div class="col-12">
-          <label class="form-label">Local de armazenamento</label>
-          {{ form.location }}
-          <div class="field-hint">
-            Onde o item está guardado.
-            {% if not form.fields.location.queryset.exists %}
-              <a href="{% url 'location_create' %}" class="text-primary-mv">Criar primeiro local <i class="bi bi-arrow-right"></i></a>
-            {% endif %}
+        <div class="d-flex gap-3">
+          <div class="field-card flex-fill" id="fc-date">
+            <div class="f-label">Data da compra</div>
+            {{ form.acquisition_date }}
+            <div class="f-hint">Quando o item foi adquirido</div>
+          </div>
+          <div class="field-card flex-fill">
+            <div class="f-label">Local de guarda</div>
+            {{ form.location }}
+            <div class="f-hint">
+              Onde o item está guardado
+              {% if not form.fields.location.queryset.exists %}
+                <br><a href="{% url 'location_create' %}" style="color:var(--mv-primary);font-size:.72rem;">+ Criar primeiro local</a>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ═══════ SEÇÃO 5: DOCUMENTOS ═══════ -->
-  <div class="card mb-4">
-    <div class="card-header py-3">
-      <h6 class="mb-0"><span class="section-number">5</span> Fotos e documentos</h6>
+    <!-- ══════ STEP 4: FOTOS ══════ -->
+    <div class="wizard-step" data-step="4">
+      <div class="step-header">
+        <div class="step-title">Fotos e documentos</div>
+        <div class="step-desc">Registre imagens e anexe certificados — tudo opcional</div>
+      </div>
+      <div class="field-row">
+        <div class="upload-grid">
+          <div class="upload-area" id="photoArea" onclick="document.getElementById('photoInput').click();">
+            <div class="u-icon"><i class="bi bi-image"></i></div>
+            <div class="u-label" id="photoLabel">Foto do item</div>
+            <div class="u-hint">JPG ou PNG</div>
+            <div class="u-file-name" id="photoFileName"></div>
+          </div>
+          <input type="file" name="photo" accept="image/*" id="photoInput" style="display:none;">
+
+          <div class="upload-area" id="certArea" onclick="document.getElementById('certInput').click();">
+            <div class="u-icon"><i class="bi bi-file-earmark-check"></i></div>
+            <div class="u-label" id="certLabel">Certificado</div>
+            <div class="u-hint">PDF ou imagem</div>
+            <div class="u-file-name" id="certFileName"></div>
+          </div>
+          <input type="file" name="certificate" accept=".pdf,image/*" id="certInput" style="display:none;">
+
+          <div class="upload-area" id="invoiceArea" onclick="document.getElementById('invoiceInput').click();">
+            <div class="u-icon"><i class="bi bi-receipt"></i></div>
+            <div class="u-label" id="invoiceLabel">Nota Fiscal</div>
+            <div class="u-hint">PDF ou imagem</div>
+            <div class="u-file-name" id="invoiceFileName"></div>
+          </div>
+          <input type="file" name="invoice_file" accept=".pdf,image/*" id="invoiceInput" style="display:none;">
+        </div>
+
+        <div class="upload-extras" id="extrasArea" onclick="document.getElementById('extrasInput').click();">
+          <span style="font-size:.85rem; color:#9ea2b6;"><i class="bi bi-images me-1"></i> Fotos adicionais</span>
+          <span style="font-size:.72rem; color:#5c6078; display:block; margin-top:.15rem;">Selecione uma ou mais imagens</span>
+        </div>
+        <input type="file" name="extra_photos" multiple accept="image/*" id="extrasInput" style="display:none;">
+        <div class="extras-preview" id="extrasPreview"></div>
+      </div>
     </div>
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-sm-4">
-          <div class="file-upload-area" id="photoArea">
-            <input type="file" name="photo" accept="image/*" id="photoInput">
-            <div class="upload-icon"><i class="bi bi-image"></i></div>
-            <div class="upload-label" id="photoLabel">
-              {% if is_edit and metal.photo %}Substituir foto{% else %}Foto do item{% endif %}
-            </div>
-            <div class="upload-hint">JPG, PNG — clique para selecionar</div>
-          </div>
-          {% if is_edit and metal.photo %}
-            <div class="mt-2 text-center">
-              <img src="{{ metal.photo.url }}" alt="" style="max-height:60px;border-radius:.375rem;opacity:.7;">
-            </div>
-          {% endif %}
+
+    <!-- ══════ STEP 5: REVIEW ══════ -->
+    <div class="wizard-step" data-step="5">
+      <div class="step-header">
+        <div class="step-title">Tudo certo?</div>
+        <div class="step-desc">Revise os dados antes de cadastrar</div>
+      </div>
+      <div class="review-grid">
+        <div class="review-card">
+          <div class="r-title"><i class="bi bi-tag"></i> Classificação</div>
+          <div class="review-row"><span class="r-label">Tipo</span><span class="r-value" id="rvType">—</span></div>
+          <div class="review-row"><span class="r-label">Material</span><span class="r-value" id="rvMaterial">—</span></div>
         </div>
-        <div class="col-sm-4">
-          <div class="file-upload-area" id="certArea">
-            <input type="file" name="certificate" accept=".pdf,image/*" id="certInput">
-            <div class="upload-icon"><i class="bi bi-file-earmark-check"></i></div>
-            <div class="upload-label" id="certLabel">
-              {% if is_edit and metal.certificate %}Substituir certificado{% else %}Certificado{% endif %}
-            </div>
-            <div class="upload-hint">PDF ou imagem</div>
-          </div>
+        <div class="review-card">
+          <div class="r-title"><i class="bi bi-rulers"></i> Especificações</div>
+          <div class="review-row"><span class="r-label">Peso</span><span class="r-value" id="rvWeight">—</span></div>
+          <div class="review-row"><span class="r-label">Pureza</span><span class="r-value" id="rvPurity">—</span></div>
+          <div class="review-row" id="rvSerialRow"><span class="r-label">Série</span><span class="r-value" id="rvSerial">—</span></div>
+          <div class="review-row" id="rvInvoiceRow"><span class="r-label">NF</span><span class="r-value" id="rvInvoice">—</span></div>
         </div>
-        <div class="col-sm-4">
-          <div class="file-upload-area" id="invoiceArea">
-            <input type="file" name="invoice_file" accept=".pdf,image/*" id="invoiceInput">
-            <div class="upload-icon"><i class="bi bi-receipt"></i></div>
-            <div class="upload-label" id="invoiceLabel">
-              {% if is_edit and metal.invoice_file %}Substituir NF{% else %}Nota Fiscal{% endif %}
-            </div>
-            <div class="upload-hint">PDF ou imagem</div>
-          </div>
+        <div class="review-card">
+          <div class="r-title"><i class="bi bi-wallet2"></i> Aquisição</div>
+          <div class="review-row"><span class="r-label">Valor</span><span class="r-value accent" id="rvValue">—</span></div>
+          <div class="review-row"><span class="r-label">Data</span><span class="r-value" id="rvDate">—</span></div>
+          <div class="review-row"><span class="r-label">Local</span><span class="r-value" id="rvLocation">—</span></div>
         </div>
-        <div class="col-12">
-          <div class="file-upload-area" id="extrasArea">
-            <input type="file" name="extra_photos" multiple accept="image/*" id="extrasInput">
-            <div class="upload-icon"><i class="bi bi-images"></i></div>
-            <div class="upload-label" id="extrasLabel">Fotos adicionais</div>
-            <div class="upload-hint">Selecione uma ou mais imagens</div>
-          </div>
-          <div id="extrasPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+        <div class="review-card" id="rvFilesCard" style="display:none;">
+          <div class="r-title"><i class="bi bi-paperclip"></i> Anexos</div>
+          <div id="rvFiles"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ═══════ RESUMO + SUBMIT ═══════ -->
-  <div class="card mb-4 border-0" style="background: linear-gradient(135deg, rgba(201,169,78,.08), rgba(201,169,78,.02));">
-    <div class="card-body">
-      <div class="d-flex align-items-center gap-3 mb-3">
-        <i class="bi bi-info-circle text-primary-mv" style="font-size:1.25rem;"></i>
-        <div>
-          <div class="fw-semibold" style="font-size:.875rem;">Resumo do item</div>
-          <div id="summaryText" class="text-muted-mv" style="font-size:.8rem;">Selecione o tipo e material para ver o resumo</div>
-        </div>
-      </div>
-      <div class="d-flex justify-content-end gap-2">
-        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary px-4">
-          <i class="bi bi-check-lg me-1"></i>
-          {% if is_edit %}Salvar alterações{% else %}Cadastrar item{% endif %}
+    <!-- ══════ NAV BUTTONS ══════ -->
+    <div class="wizard-nav">
+      <button type="button" class="btn-wiz btn-wiz-back" id="btnBack" style="visibility:hidden;" onclick="prevStep()">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </button>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn-skip" id="btnSkip" style="display:none;" onclick="nextStep()">
+          Pular <i class="bi bi-chevron-right"></i>
+        </button>
+        <button type="button" class="btn-wiz btn-wiz-next" id="btnNext" onclick="nextStep()">
+          Continuar <i class="bi bi-arrow-right"></i>
+        </button>
+        <button type="submit" class="btn-wiz btn-wiz-submit" id="btnSubmit" style="display:none;">
+          <i class="bi bi-check-lg"></i> {% if is_edit %}Salvar alterações{% else %}Cadastrar item{% endif %}
         </button>
       </div>
     </div>
-  </div>
-</form>
+
+  </form>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function() {
-  const TROY_OZ = 31.1034768;
-  const typeLabels = { bar: 'Barra', coin: 'Moeda', medal: 'Medalha', other: 'Outro' };
-  const materialLabels = { gold: 'Ouro', silver: 'Prata', platinum: 'Platina', other: 'Outro' };
+  const TROY = 31.1034768;
+  const TOTAL_STEPS = 6;
+  let current = 0;
 
-  // ── Radio-card selectors ──
-  function initRadioGrid(gridId, panelId) {
-    const grid = document.getElementById(gridId);
-    const panel = document.getElementById(panelId);
-    grid.querySelectorAll('.type-option').forEach(opt => {
-      const radio = opt.querySelector('input[type="radio"]');
-      if (radio.checked) opt.classList.add('selected');
-      opt.addEventListener('click', () => {
-        grid.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-        radio.checked = true;
-        panel.style.display = radio.value === 'other' ? 'block' : 'none';
-        if (radio.value === 'other') {
-          panel.querySelector('input').focus();
+  const typeLabels  = { bar:'Barra', coin:'Moeda', medal:'Medalha', other:'Outro' };
+  const typeEmojis  = { bar:'🪙', coin:'🥇', medal:'🏅', other:'✦' };
+  const matLabels   = { gold:'Ouro', silver:'Prata', platinum:'Platina', other:'Outro' };
+
+  /* ══════ VALIDATION PER STEP ══════ */
+  function validateStep(step) {
+    // Clear previous errors
+    document.querySelectorAll('.field-card.has-error').forEach(el => el.classList.remove('has-error'));
+    document.querySelectorAll('.f-error').forEach(el => el.remove());
+
+    function showError(fieldCardId, msg) {
+      const fc = document.getElementById(fieldCardId);
+      if (fc) {
+        fc.classList.add('has-error', 'shake');
+        setTimeout(() => fc.classList.remove('shake'), 400);
+        const errDiv = document.createElement('div');
+        errDiv.className = 'f-error';
+        errDiv.textContent = msg;
+        fc.appendChild(errDiv);
+      }
+      return false;
+    }
+
+    if (step === 0) {
+      // Type: always has a selection via radio, check custom name
+      const typeVal = document.querySelector('[name="_type_radio"]:checked')?.value;
+      if (typeVal === 'other') {
+        const custom = document.querySelector('[name="type_custom_label"]');
+        if (!custom?.value?.trim()) {
+          document.getElementById('customTypePanel').style.display = 'block';
+          custom?.focus();
+          return false;
         }
-        updateSummary();
+      }
+      return true;
+    }
+
+    if (step === 1) {
+      const matVal = document.querySelector('[name="_material_radio"]:checked')?.value;
+      if (matVal === 'other') {
+        const custom = document.querySelector('[name="material_custom_label"]');
+        if (!custom?.value?.trim()) {
+          document.getElementById('customMaterialPanel').style.display = 'block';
+          custom?.focus();
+          return false;
+        }
+      }
+      return true;
+    }
+
+    if (step === 2) {
+      const w = document.getElementById('id_weight_grams');
+      const p = document.getElementById('id_purity_percentage');
+      let ok = true;
+      if (!w?.value || parseFloat(w.value) <= 0) {
+        ok = showError('fc-weight', 'Informe o peso do item');
+        w?.focus();
+      }
+      if (ok && (!p?.value || parseFloat(p.value) <= 0)) {
+        ok = showError('fc-purity', 'Informe a pureza');
+        p?.focus();
+      }
+      return ok !== false;
+    }
+
+    if (step === 3) {
+      const v = document.getElementById('id_acquisition_value');
+      const d = document.querySelector('[name="acquisition_date"]');
+      let ok = true;
+      if (!v?.value?.trim()) {
+        ok = showError('fc-value', 'Informe o valor de aquisição');
+        v?.focus();
+        return false;
+      }
+      if (!d?.value) {
+        ok = showError('fc-date', 'Informe a data de aquisição');
+        d?.focus();
+        return false;
+      }
+      return true;
+    }
+
+    // Steps 4 and 5 have no required fields
+    return true;
+  }
+
+  /* ══════ STEP NAVIGATION ══════ */
+  function showStep(n) {
+    current = n;
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+    document.querySelector('.wizard-step[data-step="' + n + '"]').classList.add('active');
+
+    document.querySelectorAll('.wp-dot').forEach(dot => {
+      const s = parseInt(dot.dataset.step);
+      dot.classList.remove('active', 'done');
+      if (s === n) dot.classList.add('active');
+      else if (s < n) dot.classList.add('done');
+    });
+    document.querySelectorAll('.wp-line').forEach(line => {
+      line.classList.toggle('filled', parseInt(line.dataset.line) < n);
+    });
+
+    document.getElementById('btnBack').style.visibility = n === 0 ? 'hidden' : 'visible';
+    document.getElementById('btnNext').style.display = n < TOTAL_STEPS - 1 ? 'flex' : 'none';
+    document.getElementById('btnSubmit').style.display = n === TOTAL_STEPS - 1 ? 'flex' : 'none';
+    document.getElementById('btnSkip').style.display = n === 4 ? 'inline-flex' : 'none';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.nextStep = function() {
+    if (!validateStep(current)) return;
+    if (current < TOTAL_STEPS - 1) {
+      // Sync hidden fields before review
+      syncHiddenFields();
+      if (current === TOTAL_STEPS - 2) buildReview();
+      showStep(current + 1);
+    }
+  };
+
+  window.prevStep = function() {
+    if (current > 0) showStep(current - 1);
+  };
+
+  // Allow clicking done dots to go back
+  document.querySelectorAll('.wp-dot').forEach(dot => {
+    dot.addEventListener('click', function() {
+      const s = parseInt(this.dataset.step);
+      if (s < current) showStep(s);
+    });
+  });
+
+  /* ══════ SYNC HIDDEN TYPE/MATERIAL ══════ */
+  function syncHiddenFields() {
+    const typeVal = document.querySelector('[name="_type_radio"]:checked')?.value || 'bar';
+    const matVal  = document.querySelector('[name="_material_radio"]:checked')?.value || 'gold';
+    document.getElementById('hiddenType').value = typeVal;
+    document.getElementById('hiddenMaterial').value = matVal;
+  }
+
+  /* ══════ SELECTION CARDS ══════ */
+  function initSelGrid(gridId, panelId) {
+    const grid = document.getElementById(gridId);
+    grid.querySelectorAll('.sel-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        grid.querySelectorAll('.sel-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        radio.checked = true;
+        const panel = document.getElementById(panelId);
+        if (panel) {
+          panel.style.display = radio.value === 'other' ? 'block' : 'none';
+          if (radio.value === 'other') panel.querySelector('input')?.focus();
+        }
       });
     });
-    // Initial state
-    const checked = grid.querySelector('input:checked');
-    if (checked && checked.value === 'other') panel.style.display = 'block';
   }
-  initRadioGrid('typeGrid', 'customTypePanel');
-  initRadioGrid('materialGrid', 'customMaterialPanel');
+  initSelGrid('typeGrid', 'customTypePanel');
+  initSelGrid('materialGrid', 'customMaterialPanel');
 
-  // ── Troy oz auto-display ──
+  /* ══════ TROY OZ LIVE ══════ */
   const weightInput = document.getElementById('id_weight_grams');
-  const troyDisplay = document.getElementById('troyOzDisplay');
-  function updateTroyOz() {
-    const g = parseFloat(weightInput.value);
+  const troyBadge = document.getElementById('troyBadge');
+  function updateTroy() {
+    const g = parseFloat(weightInput?.value);
     if (g > 0) {
-      const oz = (g / TROY_OZ).toFixed(4).replace('.', ',');
-      troyDisplay.textContent = '≈ ' + oz + ' oz troy';
-      troyDisplay.style.display = 'inline-block';
+      troyBadge.textContent = '≈ ' + (g / TROY).toFixed(4).replace('.', ',') + ' oz troy';
+      troyBadge.style.display = 'inline-flex';
     } else {
-      troyDisplay.style.display = 'none';
+      troyBadge.style.display = 'none';
     }
   }
-  weightInput.addEventListener('input', updateTroyOz);
-  updateTroyOz();
+  weightInput?.addEventListener('input', updateTroy);
+  updateTroy();
 
-  // ── BRL currency formatting ──
+  /* ══════ BRL FORMATTING ══════ */
   function formatBRL(value) {
-    // Remove tudo que não é dígito
     let digits = value.replace(/\D/g, '');
     if (!digits) return '';
-    // Pad to at least 3 digits (for cents)
     while (digits.length < 3) digits = '0' + digits;
-    // Separate integer and decimal
     const intPart = digits.slice(0, -2).replace(/^0+/, '') || '0';
     const decPart = digits.slice(-2);
-    // Add thousand separators
-    const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return formatted + ',' + decPart;
+    return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + decPart;
   }
-
   document.querySelectorAll('.brl-input').forEach(input => {
-    input.addEventListener('input', function(e) {
-      const cursorPos = this.selectionStart;
-      const oldLen = this.value.length;
-      const raw = this.value;
-
-      // Only format if user is typing (not pasting a decimal value)
-      if (raw.match(/^\d[\d.,]*$/)) {
-        this.value = formatBRL(raw);
-        // Adjust cursor
-        const newLen = this.value.length;
-        const diff = newLen - oldLen;
-        this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+    input.addEventListener('input', function() {
+      const pos = this.selectionStart, oldLen = this.value.length;
+      if (this.value.match(/^\d[\d.,]*$/)) {
+        this.value = formatBRL(this.value);
+        const diff = this.value.length - oldLen;
+        this.setSelectionRange(pos + diff, pos + diff);
       }
     });
-
-    input.addEventListener('focus', function() {
-      if (!this.value) return;
-    });
-
-    // Format on load if there's a value
+    // Format existing value on load
     if (input.value && !input.value.includes(',')) {
       const num = parseFloat(input.value);
-      if (!isNaN(num)) {
-        input.value = formatBRL(Math.round(num * 100).toString());
-      }
+      if (!isNaN(num)) input.value = formatBRL(Math.round(num * 100).toString());
     }
   });
 
-  // ── File upload visual feedback ──
-  function setupFileArea(inputId, areaId, labelId) {
+  /* ══════ FILE UPLOADS ══════ */
+  function setupUpload(inputId, areaId, fileNameId) {
     const input = document.getElementById(inputId);
     const area = document.getElementById(areaId);
-    const label = document.getElementById(labelId);
+    const fnEl = document.getElementById(fileNameId);
     if (!input) return;
     input.addEventListener('change', function() {
       if (this.files.length > 0) {
         area.classList.add('has-file');
-        if (this.files.length === 1) {
-          label.textContent = this.files[0].name;
-        } else {
-          label.textContent = this.files.length + ' arquivos selecionados';
-        }
+        fnEl.textContent = this.files[0].name;
       } else {
         area.classList.remove('has-file');
+        fnEl.textContent = '';
       }
     });
   }
-  setupFileArea('photoInput', 'photoArea', 'photoLabel');
-  setupFileArea('certInput', 'certArea', 'certLabel');
-  setupFileArea('invoiceInput', 'invoiceArea', 'invoiceLabel');
-  setupFileArea('extrasInput', 'extrasArea', 'extrasLabel');
+  setupUpload('photoInput', 'photoArea', 'photoFileName');
+  setupUpload('certInput', 'certArea', 'certFileName');
+  setupUpload('invoiceInput', 'invoiceArea', 'invoiceFileName');
 
-  // Extra photos preview
+  // Extras
   const extrasInput = document.getElementById('extrasInput');
+  const extrasArea = document.getElementById('extrasArea');
   const extrasPreview = document.getElementById('extrasPreview');
-  if (extrasInput) {
-    extrasInput.addEventListener('change', function() {
-      extrasPreview.innerHTML = '';
-      Array.from(this.files).forEach(f => {
-        const url = URL.createObjectURL(f);
-        const el = document.createElement('div');
-        el.style.cssText = 'width:64px;height:64px;border-radius:.5rem;overflow:hidden;border:1px solid var(--mv-border);';
-        el.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;">';
-        extrasPreview.appendChild(el);
-      });
+  extrasInput?.addEventListener('change', function() {
+    extrasPreview.innerHTML = '';
+    extrasArea.classList.toggle('has-file', this.files.length > 0);
+    Array.from(this.files).forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'thumb';
+      div.innerHTML = '<img src="' + URL.createObjectURL(f) + '">';
+      extrasPreview.appendChild(div);
     });
-  }
-
-  // ── Live summary ──
-  function updateSummary() {
-    const typeRadio = document.querySelector('#typeGrid input:checked');
-    const matRadio = document.querySelector('#materialGrid input:checked');
-    if (!typeRadio || !matRadio) return;
-
-    let typeName = typeLabels[typeRadio.value] || '';
-    let matName = materialLabels[matRadio.value] || '';
-
-    if (typeRadio.value === 'other') {
-      const custom = document.querySelector('[name="type_custom_label"]');
-      if (custom && custom.value.trim()) typeName = custom.value.trim();
-      else typeName = 'Tipo personalizado';
-    }
-    if (matRadio.value === 'other') {
-      const custom = document.querySelector('[name="material_custom_label"]');
-      if (custom && custom.value.trim()) matName = custom.value.trim();
-      else matName = 'Material personalizado';
-    }
-
-    const weight = weightInput.value ? parseFloat(weightInput.value).toLocaleString('pt-BR', {minimumFractionDigits:2}) + ' g' : '';
-    const valInput = document.getElementById('id_acquisition_value');
-    const val = valInput && valInput.value ? 'R$ ' + valInput.value : '';
-
-    const parts = [typeName + ' de ' + matName];
-    if (weight) parts.push(weight);
-    if (val) parts.push(val);
-
-    document.getElementById('summaryText').textContent = parts.join(' · ');
-  }
-
-  // Listen to all relevant inputs for summary
-  document.querySelectorAll('[name="type_custom_label"], [name="material_custom_label"]').forEach(el => {
-    el.addEventListener('input', updateSummary);
   });
-  weightInput.addEventListener('input', updateSummary);
-  const acqVal = document.getElementById('id_acquisition_value');
-  if (acqVal) acqVal.addEventListener('input', updateSummary);
-  updateSummary();
+
+  /* ══════ ADD has-suffix CLASS ══════ */
+  document.querySelectorAll('.input-wrap .suffix').forEach(suf => {
+    const input = suf.parentElement.querySelector('.form-control');
+    if (input) input.classList.add('has-suffix');
+  });
+
+  /* ══════ BUILD REVIEW ══════ */
+  function buildReview() {
+    syncHiddenFields();
+    const typeVal = document.getElementById('hiddenType').value;
+    const matVal  = document.getElementById('hiddenMaterial').value;
+    let typeName = typeLabels[typeVal] || typeVal;
+    let matName  = matLabels[matVal] || matVal;
+    if (typeVal === 'other') typeName = document.querySelector('[name="type_custom_label"]')?.value?.trim() || 'Personalizado';
+    if (matVal === 'other')  matName  = document.querySelector('[name="material_custom_label"]')?.value?.trim() || 'Personalizado';
+
+    document.getElementById('rvType').innerHTML = '<span class="r-chip">' + (typeEmojis[typeVal]||'✦') + ' ' + typeName + '</span>';
+    document.getElementById('rvMaterial').textContent = matName;
+
+    const w = weightInput?.value || '';
+    const p = document.getElementById('id_purity_percentage')?.value || '';
+    const sn = document.querySelector('[name="serial_number"]')?.value || '';
+    const inv = document.querySelector('[name="invoice_number"]')?.value || '';
+    const val = document.getElementById('id_acquisition_value')?.value || '';
+    const dateVal = document.querySelector('[name="acquisition_date"]')?.value || '';
+    const locSelect = document.querySelector('[name="location"]');
+    const locText = locSelect?.selectedOptions?.[0]?.text || 'Nenhum';
+
+    document.getElementById('rvWeight').textContent = w ? w.replace('.', ',') + ' g' : '—';
+    document.getElementById('rvPurity').textContent = p ? p.replace('.', ',') + '%' : '—';
+
+    const serialRow = document.getElementById('rvSerialRow');
+    const invoiceRow = document.getElementById('rvInvoiceRow');
+    if (sn) { serialRow.style.display = 'flex'; document.getElementById('rvSerial').textContent = sn; }
+    else { serialRow.style.display = 'none'; }
+    if (inv) { invoiceRow.style.display = 'flex'; document.getElementById('rvInvoice').textContent = inv; }
+    else { invoiceRow.style.display = 'none'; }
+
+    document.getElementById('rvValue').textContent = val ? 'R$ ' + val : '—';
+    document.getElementById('rvDate').textContent = dateVal ? dateVal.split('-').reverse().join('/') : '—';
+    document.getElementById('rvLocation').textContent = locText;
+
+    // Files
+    const files = [];
+    if (document.getElementById('photoInput')?.files?.length) files.push('📷 Foto do item');
+    if (document.getElementById('certInput')?.files?.length) files.push('📄 Certificado');
+    if (document.getElementById('invoiceInput')?.files?.length) files.push('🧾 Nota Fiscal');
+    const ec = document.getElementById('extrasInput')?.files?.length || 0;
+    if (ec) files.push('🖼️ ' + ec + ' foto(s) adicional(is)');
+
+    const filesCard = document.getElementById('rvFilesCard');
+    const filesDiv = document.getElementById('rvFiles');
+    if (files.length) {
+      filesCard.style.display = 'block';
+      filesDiv.innerHTML = files.map(f => '<div class="review-row"><span class="r-value" style="font-size:.82rem;">' + f + '</span></div>').join('');
+    } else {
+      filesCard.style.display = 'none';
+    }
+  }
+
+  /* ══════ FORM SUBMIT SYNC ══════ */
+  document.getElementById('metalForm').addEventListener('submit', function() {
+    syncHiddenFields();
+  });
 
 })();
 </script>

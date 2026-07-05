@@ -1,133 +1,431 @@
 {% extends "core/base.html" %}
 {% load metal_tags %}
 {% block title %}Inventário — MetalVault{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Tabs ── */
+  .inv-tabs { display: flex; gap: .25rem; background: var(--mv-surface); border: 1px solid var(--mv-border); border-radius: .75rem; padding: .25rem; margin-bottom: 1.5rem; width: fit-content; }
+  .inv-tab {
+    padding: .5rem 1.25rem; border-radius: .5rem; font-size: .85rem; font-weight: 600;
+    color: #9ea2b6; text-decoration: none; transition: all .2s; display: flex; align-items: center; gap: .5rem;
+  }
+  .inv-tab:hover { color: #dcdfe8; }
+  .inv-tab.active { background: var(--mv-primary); color: #111; }
+  .inv-tab .tab-count {
+    font-size: .7rem; font-weight: 700; padding: .1rem .45rem; border-radius: 1rem;
+    background: rgba(255,255,255,.15); min-width: 1.25rem; text-align: center;
+  }
+  .inv-tab.active .tab-count { background: rgba(0,0,0,.2); }
+
+  /* ── Summary strip ── */
+  .summary-strip { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .summary-item { display: flex; align-items: center; gap: .5rem; }
+  .summary-item .s-icon { color: var(--mv-primary); font-size: .9rem; }
+  .summary-item .s-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: #9ea2b6; font-weight: 600; }
+  .summary-item .s-value { font-size: .9rem; font-weight: 700; color: #ffffff; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+    padding: .75rem 1rem; background: var(--mv-surface); border: 1px solid var(--mv-border);
+    border-radius: .75rem; margin-bottom: 1rem;
+  }
+  .filter-bar .form-control, .filter-bar .form-select {
+    font-size: .8rem; padding: .4rem .65rem; border-radius: .5rem;
+    max-width: 200px; background: var(--mv-surface2); border-color: var(--mv-border); color: #dcdfe8;
+  }
+  .filter-bar .form-control::placeholder { color: #787c90; }
+  .filter-bar .form-control:focus, .filter-bar .form-select:focus {
+    border-color: var(--mv-primary); box-shadow: 0 0 0 .15rem rgba(201,169,78,.12);
+  }
+  .filter-bar .btn-filter {
+    font-size: .8rem; padding: .4rem .85rem; border-radius: .5rem;
+    background: var(--mv-primary-soft); color: var(--mv-primary); border: 1px solid transparent;
+    font-weight: 600; transition: all .15s;
+  }
+  .filter-bar .btn-filter:hover { background: var(--mv-primary); color: #111; }
+  .filter-bar .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .filter-bar .search-wrap i { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #787c90; font-size: .8rem; pointer-events: none; }
+  .filter-bar .search-wrap input { padding-left: 2rem; max-width: 100%; }
+
+  /* ── Table ── */
+  .inv-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .inv-table thead th {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700;
+    color: #9ea2b6; padding: .7rem 1rem; border-bottom: 1px solid var(--mv-border);
+    background: var(--mv-surface); position: sticky; top: 0; z-index: 2;
+  }
+  .inv-table tbody tr {
+    transition: background .15s;
+  }
+  .inv-table tbody tr:hover { background: rgba(201,169,78,.04); }
+  .inv-table td {
+    padding: .75rem 1rem; border-bottom: 1px solid rgba(46,51,69,.4);
+    font-size: .875rem; vertical-align: middle; color: #dcdfe8;
+  }
+
+  /* ── Material badge ── */
+  .mat-badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .2rem .6rem; border-radius: .375rem; font-size: .78rem; font-weight: 600;
+  }
+  .mat-badge .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .mat-badge.gold   { background: rgba(255,215,0,.1);  color: #FFD700; }
+  .mat-badge.gold   .dot { background: #FFD700; }
+  .mat-badge.silver { background: rgba(192,192,192,.1); color: #d4d4d4; }
+  .mat-badge.silver .dot { background: #C0C0C0; }
+  .mat-badge.platinum { background: rgba(229,228,226,.1); color: #E5E4E2; }
+  .mat-badge.platinum .dot { background: #E5E4E2; }
+  .mat-badge.other  { background: rgba(201,169,78,.1);  color: var(--mv-primary); }
+  .mat-badge.other  .dot { background: var(--mv-primary); }
+
+  /* ── Type chip ── */
+  .type-chip {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .15rem .55rem; border-radius: .375rem; font-size: .78rem; font-weight: 600;
+    background: var(--mv-surface2); color: #ffffff; border: 1px solid var(--mv-border);
+  }
+  .type-chip .type-emoji { font-size: .85rem; }
+
+  /* ── Weight cell ── */
+  .weight-main { font-weight: 600; color: #ffffff; font-variant-numeric: tabular-nums; }
+  .weight-sub  { font-size: .72rem; color: #9ea2b6; font-variant-numeric: tabular-nums; margin-top: .1rem; }
+
+  /* ── Purity bar ── */
+  .purity-cell { display: flex; align-items: center; gap: .5rem; }
+  .purity-bar-wrap { width: 40px; height: 5px; background: rgba(46,51,69,.8); border-radius: 3px; overflow: hidden; }
+  .purity-bar-fill { height: 100%; border-radius: 3px; background: var(--mv-primary); }
+  .purity-text { font-size: .82rem; font-weight: 600; color: #dcdfe8; font-variant-numeric: tabular-nums; }
+
+  /* ── Value highlight ── */
+  .val-cell { font-weight: 700; color: var(--mv-primary); font-variant-numeric: tabular-nums; font-size: .9rem; }
+
+  /* ── Location chip ── */
+  .loc-chip {
+    display: inline-flex; align-items: center; gap: .25rem;
+    font-size: .78rem; color: #b0b4c8;
+  }
+  .loc-chip i { font-size: .7rem; color: #787c90; }
+
+  /* ── Action buttons ── */
+  .act-group { display: flex; gap: .25rem; justify-content: flex-end; }
+  .act-btn {
+    width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: .5rem; border: 1px solid var(--mv-border); background: transparent;
+    color: #9ea2b6; font-size: .8rem; transition: all .15s; cursor: pointer; text-decoration: none;
+  }
+  .act-btn:hover { background: var(--mv-surface2); color: #ffffff; border-color: #4a4f65; }
+  .act-btn.danger:hover { background: rgba(248,113,113,.1); color: #f87171; border-color: rgba(248,113,113,.3); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center; padding: 4rem 2rem;
+  }
+  .empty-icon {
+    width: 5rem; height: 5rem; border-radius: 1.25rem; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--mv-primary-soft); margin-bottom: 1.25rem;
+  }
+  .empty-icon i { font-size: 2.25rem; color: var(--mv-primary); }
+  .empty-title { font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: .35rem; }
+  .empty-desc { font-size: .875rem; color: #9ea2b6; margin-bottom: 1.25rem; }
+
+  /* ── Banknote currency badge ── */
+  .curr-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .6rem; border-radius: .375rem; font-size: .78rem; font-weight: 700;
+  }
+  .curr-badge.usd { background: rgba(34,197,94,.1); color: #4ade80; }
+  .curr-badge.eur { background: rgba(96,165,250,.1); color: #93bbfd; }
+  .curr-badge.gbp { background: rgba(168,85,247,.1); color: #c4b5fd; }
+  .curr-badge.brl { background: rgba(251,191,36,.1); color: #fbbf24; }
+  .curr-badge.other { background: rgba(201,169,78,.1); color: var(--mv-primary); }
+
+  /* ── Qty badge ── */
+  .qty-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.75rem; padding: .15rem .5rem; border-radius: .375rem;
+    background: var(--mv-surface2); border: 1px solid var(--mv-border);
+    font-size: .82rem; font-weight: 700; color: #ffffff;
+  }
+
+  /* ── Date cell ── */
+  .date-cell { font-size: .82rem; color: #b0b4c8; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 768px) {
+    .filter-bar { flex-direction: column; }
+    .filter-bar .form-control, .filter-bar .form-select { max-width: 100%; }
+    .summary-strip { gap: .75rem; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
   <div>
-    <h1 class="fw-bold" style="font-size:1.75rem;">Inventário</h1>
-    <p class="text-muted-mv mb-0" style="font-size:.875rem;">
-      {% if tab == 'metals' %}{{ metals|length }} {{ metals|length|pluralize:"metal,metais" }}{% else %}{{ banknotes|length }} {{ banknotes|length|pluralize:"cédula,cédulas" }}{% endif %}
+    <h1 class="fw-bold" style="font-size:1.75rem; color:#ffffff;">Inventário</h1>
+    <p class="mb-0" style="font-size:.875rem; color:#b0b4c8;">
+      Gerencie todos os itens do seu acervo
     </p>
   </div>
   {% if tab == 'metals' %}
-    <a href="{% url 'metal_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo metal</a>
+    <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Novo metal</a>
   {% else %}
-    <a href="{% url 'banknote_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nova cédula</a>
+    <a href="{% url 'banknote_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nova cédula</a>
   {% endif %}
 </div>
 
-<!-- Tabs -->
-<ul class="nav nav-tabs mb-4" style="border-color:var(--mv-border);">
-  <li class="nav-item"><a class="nav-link {% if tab == 'metals' %}active{% endif %}" href="?tab=metals" style="{% if tab == 'metals' %}background:var(--mv-surface);color:var(--mv-primary);border-color:var(--mv-border) var(--mv-border) var(--mv-surface);{% else %}color:var(--mv-muted);border-color:transparent;{% endif %}">Metais</a></li>
-  <li class="nav-item"><a class="nav-link {% if tab == 'banknotes' %}active{% endif %}" href="?tab=banknotes" style="{% if tab == 'banknotes' %}background:var(--mv-surface);color:var(--mv-primary);border-color:var(--mv-border) var(--mv-border) var(--mv-surface);{% else %}color:var(--mv-muted);border-color:transparent;{% endif %}">Cédulas</a></li>
-</ul>
+<!-- ═══════ TABS ═══════ -->
+<div class="inv-tabs">
+  <a href="?tab=metals" class="inv-tab {% if tab == 'metals' %}active{% endif %}">
+    <i class="bi bi-gem"></i> Metais
+    <span class="tab-count">{{ metals|length }}</span>
+  </a>
+  <a href="?tab=banknotes" class="inv-tab {% if tab == 'banknotes' %}active{% endif %}">
+    <i class="bi bi-cash-stack"></i> Cédulas
+    <span class="tab-count">{{ banknotes|length }}</span>
+  </a>
+</div>
 
 {% if tab == 'metals' %}
-<!-- Filters -->
-<div class="card mb-4">
-  <div class="card-body">
-    <form method="get" class="row g-2">
-      <input type="hidden" name="tab" value="metals">
-      <div class="col-sm-6 col-lg-3"><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Buscar série, NF…"></div>
-      <div class="col-sm-6 col-lg-3">
-        <select name="material" class="form-select form-select-sm">
-          <option value="all">Todos os materiais</option>
-          <option value="gold" {% if material_filter == 'gold' %}selected{% endif %}>Ouro</option>
-          <option value="silver" {% if material_filter == 'silver' %}selected{% endif %}>Prata</option>
-          <option value="platinum" {% if material_filter == 'platinum' %}selected{% endif %}>Platina</option>
-          <option value="other" {% if material_filter == 'other' %}selected{% endif %}>Outro</option>
-        </select>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <select name="type" class="form-select form-select-sm">
-          <option value="all">Todos os tipos</option>
-          <option value="bar" {% if type_filter == 'bar' %}selected{% endif %}>Barra</option>
-          <option value="coin" {% if type_filter == 'coin' %}selected{% endif %}>Moeda</option>
-          <option value="medal" {% if type_filter == 'medal' %}selected{% endif %}>Medalha</option>
-          <option value="other" {% if type_filter == 'other' %}selected{% endif %}>Outro</option>
-        </select>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <select name="location" class="form-select form-select-sm">
-          <option value="all">Todos os locais</option>
-          {% for loc in locations %}<option value="{{ loc.id }}" {% if location_filter == loc.id|slugify %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
-        </select>
-      </div>
-      <div class="col-12"><button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-funnel"></i> Filtrar</button></div>
-    </form>
-  </div>
-</div>
 
-<!-- Metals table -->
-<div class="card">
-  <div class="card-body p-0">
-    {% if metals %}
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead><tr>
-          <th>Tipo</th><th>Material</th><th class="text-end">Peso</th><th class="text-end">Pureza</th><th>Local</th><th class="text-end">Valor aquisição</th><th class="text-end">Ações</th>
-        </tr></thead>
-        <tbody>
-          {% for m in metals %}
-          <tr>
-            <td class="fw-medium">{{ m.type_label }}</td>
-            <td><span class="material-dot"></span>{{ m.material_label }}</td>
-            <td class="text-end tabular-nums"><div>{{ m.weight_grams|grams }}</div><div class="text-muted-mv" style="font-size:.75rem;">{{ m.weight_grams|troy_oz }}</div></td>
-            <td class="text-end tabular-nums">{{ m.purity_percentage|purity }}</td>
-            <td class="text-muted-mv">{{ m.location.name|default:"—" }}</td>
-            <td class="text-end fw-semibold text-primary-mv tabular-nums">{{ m.acquisition_value|brl }}</td>
-            <td class="text-end">
-              <a href="{% url 'metal_detail' m.pk %}" class="btn btn-outline-secondary btn-sm" title="Ver"><i class="bi bi-eye"></i></a>
-              <a href="{% url 'metal_edit' m.pk %}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
-              <form method="post" action="{% url 'metal_delete' m.pk %}" class="d-inline" onsubmit="return confirm('Remover este metal?')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" title="Remover"><i class="bi bi-trash"></i></button></form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="text-center py-5 text-muted-mv">Nenhum metal encontrado.</div>
-    {% endif %}
+<!-- ═══════ SUMMARY STRIP ═══════ -->
+{% if metals %}
+<div class="summary-strip">
+  <div class="summary-item">
+    <i class="bi bi-box-seam s-icon"></i>
+    <div><div class="s-label">Itens</div><div class="s-value">{{ metals|length }}</div></div>
   </div>
-</div>
-
-{% else %}
-<!-- Banknotes table -->
-<div class="card">
-  <div class="card-body p-0">
-    {% if banknotes %}
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead><tr>
-          <th>Moeda</th><th class="text-end">Valor da nota</th><th class="text-end">Qtd.</th><th>Local</th><th>Aquisição</th><th class="text-end">Valor aquisição</th><th class="text-end">Ações</th>
-        </tr></thead>
-        <tbody>
-          {% for b in banknotes %}
-          <tr>
-            <td class="fw-medium">{{ b.currency_label }}</td>
-            <td class="text-end tabular-nums">{{ b.denomination|brl }}</td>
-            <td class="text-end tabular-nums">{{ b.quantity }}</td>
-            <td class="text-muted-mv">{{ b.location.name|default:"—" }}</td>
-            <td class="text-muted-mv">{{ b.acquisition_date|date_br }}</td>
-            <td class="text-end fw-semibold text-primary-mv tabular-nums">{{ b.acquisition_value|brl }}</td>
-            <td class="text-end">
-              <a href="{% url 'banknote_edit' b.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
-              <form method="post" action="{% url 'banknote_delete' b.pk %}" class="d-inline" onsubmit="return confirm('Remover esta cédula?')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button></form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="text-center py-5">
-      <div class="d-inline-block rounded-circle bg-surface2 p-3 mb-3"><i class="bi bi-cash-stack text-primary-mv" style="font-size:2rem;"></i></div>
-      <div class="text-muted-mv">Nenhuma cédula cadastrada.</div>
-      <a href="{% url 'banknote_create' %}" class="btn btn-outline-secondary btn-sm mt-2"><i class="bi bi-plus-lg"></i> Cadastrar primeira cédula</a>
-    </div>
-    {% endif %}
+  <div class="summary-item" id="totalWeight">
+    <i class="bi bi-speedometer s-icon"></i>
+    <div><div class="s-label">Peso total</div><div class="s-value" id="sumWeight">—</div></div>
+  </div>
+  <div class="summary-item" id="totalValue">
+    <i class="bi bi-wallet2 s-icon"></i>
+    <div><div class="s-label">Valor total</div><div class="s-value" id="sumValue">—</div></div>
   </div>
 </div>
 {% endif %}
+
+<!-- ═══════ FILTER BAR ═══════ -->
+<form method="get">
+  <input type="hidden" name="tab" value="metals">
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <i class="bi bi-search"></i>
+      <input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por série, nota fiscal…">
+    </div>
+    <select name="material" class="form-select">
+      <option value="all">Todo material</option>
+      <option value="gold" {% if material_filter == 'gold' %}selected{% endif %}>Ouro</option>
+      <option value="silver" {% if material_filter == 'silver' %}selected{% endif %}>Prata</option>
+      <option value="platinum" {% if material_filter == 'platinum' %}selected{% endif %}>Platina</option>
+      <option value="other" {% if material_filter == 'other' %}selected{% endif %}>Outro</option>
+    </select>
+    <select name="type" class="form-select">
+      <option value="all">Todo tipo</option>
+      <option value="bar" {% if type_filter == 'bar' %}selected{% endif %}>Barra</option>
+      <option value="coin" {% if type_filter == 'coin' %}selected{% endif %}>Moeda</option>
+      <option value="medal" {% if type_filter == 'medal' %}selected{% endif %}>Medalha</option>
+      <option value="other" {% if type_filter == 'other' %}selected{% endif %}>Outro</option>
+    </select>
+    <select name="location" class="form-select">
+      <option value="all">Todo local</option>
+      {% for loc in locations %}<option value="{{ loc.id }}" {% if location_filter == loc.id|slugify %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+    </select>
+    <button class="btn-filter" type="submit"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+  </div>
+</form>
+
+<!-- ═══════ METALS TABLE ═══════ -->
+<div class="card" style="overflow:hidden;">
+  {% if metals %}
+  <div class="table-responsive">
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Material</th>
+          <th class="text-end">Peso</th>
+          <th class="text-end">Pureza</th>
+          <th>Local</th>
+          <th class="text-end">Valor aquisição</th>
+          <th class="text-end" style="width:120px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in metals %}
+        <tr>
+          <td>
+            <span class="type-chip">
+              <span class="type-emoji">{% if m.type == 'bar' %}🪙{% elif m.type == 'coin' %}🥇{% elif m.type == 'medal' %}🏅{% else %}✦{% endif %}</span>
+              {{ m.type_label }}
+            </span>
+          </td>
+          <td>
+            <span class="mat-badge {{ m.material }}">
+              <span class="dot"></span>
+              {{ m.material_label }}
+            </span>
+          </td>
+          <td class="text-end">
+            <div class="weight-main">{{ m.weight_grams|grams }}</div>
+            <div class="weight-sub">{{ m.weight_grams|troy_oz }}</div>
+          </td>
+          <td class="text-end">
+            <div class="purity-cell justify-content-end">
+              <div class="purity-bar-wrap"><div class="purity-bar-fill" style="width:{{ m.purity_percentage }}%;"></div></div>
+              <span class="purity-text">{{ m.purity_percentage|purity }}</span>
+            </div>
+          </td>
+          <td>
+            {% if m.location %}
+              <span class="loc-chip"><i class="bi bi-geo-alt-fill"></i> {{ m.location.name }}</span>
+            {% else %}
+              <span class="loc-chip" style="color:#5c6078;"><i class="bi bi-dash"></i> Sem local</span>
+            {% endif %}
+          </td>
+          <td class="text-end val-cell">{{ m.acquisition_value|brl }}</td>
+          <td class="text-end">
+            <div class="act-group">
+              <a href="{% url 'metal_detail' m.pk %}" class="act-btn" title="Ver detalhes"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'metal_edit' m.pk %}" class="act-btn" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="post" action="{% url 'metal_delete' m.pk %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja remover este item?')">
+                {% csrf_token %}
+                <button class="act-btn danger" title="Remover"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-gem"></i></div>
+    <div class="empty-title">Nenhum metal encontrado</div>
+    <div class="empty-desc">
+      {% if q or material_filter != 'all' or type_filter != 'all' or location_filter != 'all' %}
+        Tente ajustar os filtros ou limpar a busca.
+      {% else %}
+        Comece cadastrando o primeiro item do seu acervo.
+      {% endif %}
+    </div>
+    {% if not q and material_filter == 'all' and type_filter == 'all' and location_filter == 'all' %}
+      <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Cadastrar primeiro metal</a>
+    {% else %}
+      <a href="?tab=metals" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Limpar filtros</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+
+<!-- ═══════ BANKNOTES SUMMARY ═══════ -->
+{% if banknotes %}
+<div class="summary-strip">
+  <div class="summary-item">
+    <i class="bi bi-cash-stack s-icon"></i>
+    <div><div class="s-label">Cédulas</div><div class="s-value">{{ banknotes|length }}</div></div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══════ BANKNOTES TABLE ═══════ -->
+<div class="card" style="overflow:hidden;">
+  {% if banknotes %}
+  <div class="table-responsive">
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th>Moeda</th>
+          <th class="text-end">Valor de face</th>
+          <th class="text-end">Qtd.</th>
+          <th>Local</th>
+          <th>Data aquisição</th>
+          <th class="text-end">Valor aquisição</th>
+          <th class="text-end" style="width:90px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in banknotes %}
+        <tr>
+          <td>
+            <span class="curr-badge {{ b.currency }}">
+              {% if b.currency == 'usd' %}${% elif b.currency == 'eur' %}€{% elif b.currency == 'gbp' %}£{% elif b.currency == 'brl' %}R${% else %}¤{% endif %}
+              {{ b.currency_label }}
+            </span>
+          </td>
+          <td class="text-end">
+            <span style="font-weight:600; color:#ffffff; font-variant-numeric:tabular-nums;">{{ b.denomination|brl }}</span>
+          </td>
+          <td class="text-end">
+            <span class="qty-badge">{{ b.quantity }}</span>
+          </td>
+          <td>
+            {% if b.location %}
+              <span class="loc-chip"><i class="bi bi-geo-alt-fill"></i> {{ b.location.name }}</span>
+            {% else %}
+              <span class="loc-chip" style="color:#5c6078;"><i class="bi bi-dash"></i> Sem local</span>
+            {% endif %}
+          </td>
+          <td><span class="date-cell">{{ b.acquisition_date|date_br }}</span></td>
+          <td class="text-end val-cell">{{ b.acquisition_value|brl }}</td>
+          <td class="text-end">
+            <div class="act-group">
+              <a href="{% url 'banknote_edit' b.pk %}" class="act-btn" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="post" action="{% url 'banknote_delete' b.pk %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja remover esta cédula?')">
+                {% csrf_token %}
+                <button class="act-btn danger" title="Remover"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-cash-stack"></i></div>
+    <div class="empty-title">Nenhuma cédula cadastrada</div>
+    <div class="empty-desc">Adicione cédulas em moeda estrangeira ou nacional ao seu acervo.</div>
+    <a href="{% url 'banknote_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Cadastrar primeira cédula</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Calculate summary totals from visible rows
+(function() {
+  const rows = document.querySelectorAll('.inv-table tbody tr');
+  if (!rows.length) return;
+
+  const sumWeightEl = document.getElementById('sumWeight');
+  const sumValueEl = document.getElementById('sumValue');
+  if (!sumWeightEl) return;
+
+  let totalGrams = 0, totalValue = 0;
+  rows.forEach(tr => {
+    const weightCell = tr.querySelector('.weight-main');
+    const valueCell = tr.querySelector('.val-cell');
+    if (weightCell) {
+      const g = parseFloat(weightCell.textContent.replace(/\./g, '').replace(',', '.'));
+      if (!isNaN(g)) totalGrams += g;
+    }
+    if (valueCell) {
+      const v = parseFloat(valueCell.textContent.replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
+      if (!isNaN(v)) totalValue += v;
+    }
+  });
+
+  sumWeightEl.textContent = totalGrams.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' g';
+  sumValueEl.textContent = 'R$ ' + totalValue.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+})();
+</script>
 {% endblock %}
