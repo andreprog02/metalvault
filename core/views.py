@@ -63,15 +63,25 @@ def dashboard(request):
     total_value = metals.aggregate(s=Sum("acquisition_value"))["s"] or 0
     total_grams = metals.aggregate(s=Sum("weight_grams"))["s"] or 0
 
-    by_material = defaultdict(lambda: {"grams": Decimal(0), "value": Decimal(0), "count": 0, "label": ""})
+    by_material = defaultdict(lambda: {"grams": Decimal(0), "value": Decimal(0), "count": 0, "label": "", "key": ""})
     for m in metals:
         label = m.material_label()
         by_material[label]["grams"] += m.weight_grams
         by_material[label]["value"] += m.acquisition_value
         by_material[label]["count"] += 1
         by_material[label]["label"] = label
+        by_material[label]["key"] = m.material
 
-    chart_data = [{"name": d["label"], "grams": float(d["grams"]), "value": float(d["value"])} for d in by_material.values()]
+    chart_data = []
+    for d in by_material.values():
+        avg_per_gram = float(d["value"]) / float(d["grams"]) if d["grams"] > 0 else 0
+        chart_data.append({
+            "name": d["label"],
+            "key": d["key"],
+            "grams": float(d["grams"]),
+            "value": float(d["value"]),
+            "avg_per_gram": round(avg_per_gram, 2),
+        })
 
     return render(request, "core/dashboard.html", {
         "total_items": total_items,
@@ -142,6 +152,92 @@ def api_valuation(request):
         "total_current": total_cur,
         "spots": spots,
     })
+
+
+@login_required
+def api_purchase_vs_market(request):
+    """Returns each metal purchase with price/gram paid and market price/gram on that date."""
+    metals = Metal.objects.filter(user=request.user).order_by("acquisition_date")
+    if not metals.exists():
+        return JsonResponse({"purchases": []})
+
+    # Build purchase data
+    purchases = []
+    for m in metals:
+        purity = float(m.purity_percentage) / 100 if m.purity_percentage else 1
+        pure_grams = float(m.weight_grams) * purity if m.weight_grams else 0
+        price_per_gram_raw = float(m.acquisition_value) / float(m.weight_grams) if m.weight_grams > 0 else 0
+        price_per_pure_gram = float(m.acquisition_value) / pure_grams if pure_grams > 0 else 0
+        purchases.append({
+            "id": str(m.pk),
+            "date": m.acquisition_date.strftime("%Y-%m-%d"),
+            "date_label": m.acquisition_date.strftime("%d/%m/%Y"),
+            "material": m.material,
+            "material_label": m.material_label(),
+            "type_label": m.type_label(),
+            "weight_grams": float(m.weight_grams),
+            "pure_grams": round(pure_grams, 4),
+            "purity": round(purity * 100, 2),
+            "acquisition_value": float(m.acquisition_value),
+            "price_per_gram": round(price_per_gram_raw, 2),
+            "price_per_pure_gram": round(price_per_pure_gram, 2),
+            "serial_number": m.serial_number or "",
+        })
+
+    # Fetch historical market prices for each unique (material, date)
+    material_api_map = {"gold": "XAU-BRL", "silver": "XAG-BRL", "platinum": "XPT-BRL"}
+    unique_queries = set()
+    for p in purchases:
+        if p["material"] in material_api_map:
+            unique_queries.add((p["material"], p["date"]))
+
+    # Fetch from AwesomeAPI daily endpoint
+    market_prices = {}  # (material, date_str) -> price_per_gram
+    for material, date_str in unique_queries:
+        api_pair = material_api_map.get(material)
+        if not api_pair:
+            continue
+        try:
+            dt = date_str.replace("-", "")
+            # Fetch a small range around the date (±3 days) to handle weekends/holidays
+            from datetime import timedelta, datetime as dt_class
+            d = dt_class.strptime(date_str, "%Y-%m-%d")
+            start = (d - timedelta(days=5)).strftime("%Y%m%d")
+            end = (d + timedelta(days=1)).strftime("%Y%m%d")
+            url = f"https://economia.awesomeapi.com.br/json/daily/{api_pair}?start_date={start}&end_date={end}"
+            r = requests.get(url, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                if data and isinstance(data, list) and len(data) > 0:
+                    # Get closest date (data comes sorted by most recent first)
+                    bid = float(data[0].get("bid", 0))
+                    price_per_gram = bid / GRAMS_PER_TROY_OUNCE if bid > 0 else 0
+                    market_prices[(material, date_str)] = round(price_per_gram, 2)
+        except Exception:
+            pass
+
+    # Also get current spot prices for reference
+    try:
+        r = requests.get("https://economia.awesomeapi.com.br/json/last/XAU-BRL,XAG-BRL", timeout=10)
+        if r.status_code == 200:
+            quotes = r.json()
+            current_spots = {}
+            if "XAUBRL" in quotes:
+                current_spots["gold"] = round(float(quotes["XAUBRL"]["bid"]) / GRAMS_PER_TROY_OUNCE, 2)
+            if "XAGBRL" in quotes:
+                current_spots["silver"] = round(float(quotes["XAGBRL"]["bid"]) / GRAMS_PER_TROY_OUNCE, 2)
+        else:
+            current_spots = {}
+    except Exception:
+        current_spots = {}
+
+    # Attach market price to each purchase
+    for p in purchases:
+        key = (p["material"], p["date"])
+        p["market_price_per_gram"] = market_prices.get(key)
+        p["current_spot_per_gram"] = current_spots.get(p["material"])
+
+    return JsonResponse({"purchases": purchases, "current_spots": current_spots})
 
 
 # ---------- INVENTORY ----------

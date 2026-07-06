@@ -249,6 +249,7 @@
           <th class="text-end">Peso</th>
           <th class="text-end">Pureza</th>
           <th>Local</th>
+          <th>Data aquisição</th>
           <th class="text-end">Valor aquisição</th>
           <th class="text-end" style="width:120px;">Ações</th>
         </tr>
@@ -285,6 +286,7 @@
               <span class="loc-chip" style="color:#5c6078;"><i class="bi bi-dash"></i> Sem local</span>
             {% endif %}
           </td>
+          <td><span class="date-cell">{{ m.acquisition_date|date_br }}</span></td>
           <td class="text-end val-cell">{{ m.acquisition_value|brl }}</td>
           <td class="text-end">
             <div class="act-group">

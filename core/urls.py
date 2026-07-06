@@ -29,4 +29,5 @@ urlpatterns = [
     # API
     path("api/quotes/", views.api_quotes, name="api_quotes"),
     path("api/valuation/", views.api_valuation, name="api_valuation"),
+    path("api/purchase-vs-market/", views.api_purchase_vs_market, name="api_purchase_vs_market"),
 ]

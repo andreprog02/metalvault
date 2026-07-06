@@ -4,31 +4,31 @@
 
 {% block extra_css %}
 <style>
-  /* ── Stat cards ── */
+  /* ── Stat cards com melhor contraste ── */
   .dash-stat { padding: 1.25rem; display: flex; align-items: flex-start; gap: 1rem; }
   .dash-stat .icon-wrap {
     background: var(--mv-primary-soft); border-radius: .625rem;
     padding: .7rem; color: var(--mv-primary); font-size: 1.15rem;
     flex-shrink: 0;
   }
-  .dash-stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
-  .dash-stat .value { font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-top: .15rem; }
-  .dash-stat .sub { font-size: .75rem; color: #b0b4c8; margin-top: .1rem; }
+  .dash-stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #a0a4b8; font-weight: 600; }
+  .dash-stat .value { font-size: 1.3rem; font-weight: 700; color: #f0f1f5; margin-top: .15rem; }
+  .dash-stat .sub { font-size: .75rem; color: #9498ad; margin-top: .1rem; }
 
   /* ── Quote cards ── */
   .quote-card { padding: 1.1rem 1.25rem; }
-  .quote-card .q-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
-  .quote-card .q-value { font-size: 1.2rem; font-weight: 700; color: #ffffff; margin-top: .2rem; }
-  .quote-card .q-value .q-unit { font-size: .7rem; font-weight: 400; color: #b0b4c8; margin-left: .25rem; }
-  .quote-card .q-sub { font-size: .72rem; color: #b0b4c8; margin-top: .15rem; }
+  .quote-card .q-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #a0a4b8; font-weight: 600; }
+  .quote-card .q-value { font-size: 1.2rem; font-weight: 700; color: #f0f1f5; margin-top: .2rem; }
+  .quote-card .q-value .q-unit { font-size: .7rem; font-weight: 400; color: #9498ad; margin-left: .25rem; }
+  .quote-card .q-sub { font-size: .72rem; color: #9498ad; margin-top: .15rem; }
   .quote-card .q-pct { font-size: .75rem; font-weight: 600; }
   .quote-card .q-pct.up { color: #4ade80; }
   .quote-card .q-pct.down { color: #f87171; }
 
   /* ── Valuation card ── */
   .val-box { border: 1px solid var(--mv-border); border-radius: .625rem; padding: 1rem 1.15rem; background: var(--mv-surface2); }
-  .val-box .val-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
-  .val-box .val-num { font-size: 1.2rem; font-weight: 700; color: #ffffff; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+  .val-box .val-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #a0a4b8; font-weight: 600; }
+  .val-box .val-num { font-size: 1.2rem; font-weight: 700; color: #f0f1f5; margin-top: .2rem; font-variant-numeric: tabular-nums; }
   .val-box .val-num.accent { color: var(--mv-primary); }
   .val-box .val-num.positive { color: #4ade80; }
   .val-box .val-num.negative { color: #f87171; }
@@ -37,31 +37,31 @@
   .val-box .val-sub.negative { color: #f87171; }
 
   /* ── Valuation table ── */
-  .val-table { color: #dcdfe8; }
-  .val-table thead th { color: #b0b4c8; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; border-bottom: 1px solid var(--mv-border); padding: .6rem .5rem; }
+  .val-table { color: #d0d3de; }
+  .val-table thead th { color: #a0a4b8; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; border-bottom: 1px solid var(--mv-border); padding: .6rem .5rem; }
   .val-table td { border-bottom: 1px solid rgba(46,51,69,.4); padding: .55rem .5rem; font-size: .85rem; }
-  .val-table .mat-name { color: #ffffff; font-weight: 600; }
-  .val-table .dim { color: #9ea2b6; }
+  .val-table .mat-name { color: #f0f1f5; font-weight: 600; }
+  .val-table .dim { color: #9498ad; }
   .val-table .highlight { color: var(--mv-primary); font-weight: 600; }
-  .val-table .no-data { color: #787c90; font-style: italic; }
+  .val-table .no-data { color: #6b6f82; font-style: italic; }
 
   /* ── Breakdown list ── */
   .breakdown-item { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; }
   .breakdown-item:not(:last-child) { border-bottom: 1px solid rgba(46,51,69,.5); }
-  .breakdown-item .mat-label { color: #ffffff; font-weight: 600; font-size: .9rem; }
-  .breakdown-item .mat-meta { color: #b0b4c8; font-size: .75rem; margin-top: .1rem; }
+  .breakdown-item .mat-label { color: #f0f1f5; font-weight: 600; font-size: .9rem; }
+  .breakdown-item .mat-meta { color: #9498ad; font-size: .75rem; margin-top: .1rem; }
   .breakdown-item .mat-value { color: var(--mv-primary); font-weight: 700; font-size: .9rem; white-space: nowrap; }
 
   /* ── Section titles ── */
-  .section-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #b0b4c8; font-weight: 600; }
+  .section-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #a0a4b8; font-weight: 600; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
   <div>
-    <h1 class="fw-bold" style="font-size:1.75rem;color:#ffffff;">Painel</h1>
-    <p class="mb-0" style="font-size:.875rem;color:#b0b4c8;">Visão geral do seu acervo</p>
+    <h1 class="fw-bold" style="font-size:1.75rem;color:#f0f1f5;">Painel</h1>
+    <p class="mb-0" style="font-size:.875rem;color:#9498ad;">Visão geral do seu acervo</p>
   </div>
   <a href="{% url 'inventory' %}" class="btn btn-outline-secondary btn-sm">Ver inventário completo</a>
 </div>
@@ -70,10 +70,10 @@
 <div class="mb-4">
   <div class="d-flex align-items-end justify-content-between mb-2">
     <span class="section-label">Cotações de mercado</span>
-    <span style="font-size:.7rem;color:#9ea2b6;" id="quote-time"></span>
+    <span style="font-size:.7rem;color:#7b7f93;" id="quote-time"></span>
   </div>
   <div class="row g-3" id="quotes-container">
-    <div class="col-12" style="font-size:.875rem;color:#b0b4c8;">Carregando cotações…</div>
+    <div class="col-12" style="font-size:.875rem;color:#9498ad;">Carregando cotações…</div>
   </div>
 </div>
 
@@ -83,8 +83,8 @@
     <div class="d-inline-block rounded-circle p-3 mb-3" style="background:var(--mv-primary-soft);">
       <i class="bi bi-coin" style="font-size:2.5rem;color:var(--mv-primary);"></i>
     </div>
-    <h4 style="color:#ffffff;">Seu cofre está vazio</h4>
-    <p style="color:#b0b4c8;">Cadastre o primeiro metal para começar.</p>
+    <h4 style="color:#f0f1f5;">Seu cofre está vazio</h4>
+    <p style="color:#9498ad;">Cadastre o primeiro metal para começar.</p>
     <a href="{% url 'metal_create' %}" class="btn btn-primary">Cadastrar metal</a>
   </div>
 </div>
@@ -125,7 +125,7 @@
 <div class="row g-3">
   <div class="col-lg-8">
     <div class="card">
-      <div class="card-header py-3"><h6 class="mb-0" style="color:#ffffff;">Distribuição por material (gramas)</h6></div>
+      <div class="card-header py-3"><h6 class="mb-0" style="color:#d0d3de;">Distribuição por material (gramas)</h6></div>
       <div class="card-body" style="height:320px;padding:1rem 1.25rem;">
         <canvas id="chart"></canvas>
       </div>
@@ -133,7 +133,7 @@
   </div>
   <div class="col-lg-4">
     <div class="card">
-      <div class="card-header py-3"><h6 class="mb-0" style="color:#ffffff;">Detalhamento</h6></div>
+      <div class="card-header py-3"><h6 class="mb-0" style="color:#d0d3de;">Detalhamento</h6></div>
       <div class="card-body" style="padding:.75rem 1.25rem;">
         {% for label, data in by_material.items %}
         <div class="breakdown-item">
@@ -144,6 +144,38 @@
           <div class="mat-value">{{ data.value|brl }}</div>
         </div>
         {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ GRÁFICO: PREÇO PAGO vs COTAÇÃO DO MERCADO ═══════ -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0" style="color:#ffffff;"><i class="bi bi-graph-up me-2" style="color:var(--mv-primary);"></i>Preço pago vs Cotação do mercado (por grama)</h6>
+        <span style="font-size:.7rem;color:#787c90;" id="pvm-status">Carregando dados…</span>
+      </div>
+      <div class="card-body" style="padding:1.25rem;">
+        <div class="row g-3 mb-3" id="pvm-legend" style="display:none;">
+          <div class="col-auto d-flex align-items-center gap-2">
+            <span style="width:14px;height:14px;border-radius:3px;background:rgba(201,169,78,.75);display:inline-block;"></span>
+            <span style="font-size:.78rem;color:#b0b4c8;">Preço pago por grama de metal puro (corrigido pela pureza)</span>
+          </div>
+          <div class="col-auto d-flex align-items-center gap-2">
+            <span style="width:20px;height:3px;border-radius:2px;background:#4ade80;display:inline-block;"></span>
+            <span style="font-size:.78rem;color:#b0b4c8;">Cotação do mercado no dia da compra</span>
+          </div>
+          <div class="col-auto d-flex align-items-center gap-2">
+            <span style="width:20px;height:2px;border-radius:2px;background:rgba(96,165,250,.6);display:inline-block;border-top:2px dashed rgba(96,165,250,.6);"></span>
+            <span style="font-size:.78rem;color:#b0b4c8;">Cotação atual do mercado</span>
+          </div>
+        </div>
+        <div style="height:360px;">
+          <canvas id="pvmChart"></canvas>
+        </div>
+        <div id="pvm-summary" style="display:none;" class="mt-3"></div>
       </div>
     </div>
   </div>
@@ -167,7 +199,7 @@ fetch('/api/quotes/')
   .then(r => r.json())
   .then(data => {
     if (data.error) {
-      document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#b0b4c8;">Não foi possível carregar cotações.</div>';
+      document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#9498ad;">Não foi possível carregar cotações.</div>';
       return;
     }
     const OZ = 31.1034768;
@@ -198,7 +230,7 @@ fetch('/api/quotes/')
     document.getElementById('quote-time').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
   })
   .catch(() => {
-    document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#b0b4c8;">Erro ao carregar cotações.</div>';
+    document.getElementById('quotes-container').innerHTML = '<div class="col-12" style="color:#9498ad;">Erro ao carregar cotações.</div>';
   });
 
 // ── Valorização do inventário ──
@@ -215,18 +247,18 @@ fetch('/api/valuation/')
     let rowsHtml = data.rows.map(r =>
       '<tr>' +
         '<td class="mat-name">' + r.label + '</td>' +
-        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + fGrams(r.grams) + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#d0d3de;">' + fGrams(r.grams) + '</td>' +
         '<td class="text-end tabular-nums dim">' + fGrams(r.pure_grams) + '</td>' +
-        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + (r.has_price ? fBRL(r.spot_per_gram) : '<span class="dim">—</span>') + '</td>' +
-        '<td class="text-end tabular-nums" style="color:#dcdfe8;">' + fBRL(r.acquisition) + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#d0d3de;">' + (r.has_price ? fBRL(r.spot_per_gram) : '<span class="dim">—</span>') + '</td>' +
+        '<td class="text-end tabular-nums" style="color:#d0d3de;">' + fBRL(r.acquisition) + '</td>' +
         '<td class="text-end tabular-nums highlight">' + (r.has_price ? fBRL(r.current) : '<span class="no-data">sem cotação</span>') + '</td>' +
       '</tr>'
     ).join('');
 
     card.innerHTML =
       '<div class="card-header py-3 d-flex justify-content-between align-items-center">' +
-        '<h6 class="mb-0" style="color:#ffffff;"><i class="bi bi-graph-up-arrow me-2" style="color:var(--mv-primary);"></i>Valor atualizado do inventário</h6>' +
-        '<span style="font-size:.7rem;color:#9ea2b6;">Baseado nas cotações ao vivo</span>' +
+        '<h6 class="mb-0" style="color:#d0d3de;"><i class="bi bi-graph-up-arrow me-2" style="color:var(--mv-primary);"></i>Valor atualizado do inventário</h6>' +
+        '<span style="font-size:.7rem;color:#7b7f93;">Baseado nas cotações ao vivo</span>' +
       '</div>' +
       '<div class="card-body">' +
         '<div class="row g-3 mb-3">' +
@@ -237,7 +269,7 @@ fetch('/api/valuation/')
         '<div class="table-responsive"><table class="table val-table table-sm mb-2"><thead><tr>' +
           '<th>Material</th><th class="text-end">Peso bruto</th><th class="text-end">Peso fino</th><th class="text-end">Preço/g</th><th class="text-end">Aquisição</th><th class="text-end">Valor atual</th>' +
         '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
-        '<p style="font-size:.72rem;color:#9ea2b6;" class="mb-0">Cálculo: peso (g) × pureza × preço da grama. Materiais sem cotação não entram no total.</p>' +
+        '<p style="font-size:.72rem;color:#7b7f93;" class="mb-0">Cálculo: peso (g) × pureza × preço da grama. Materiais sem cotação não entram no total.</p>' +
       '</div>';
     card.style.display = 'block';
   });
@@ -247,23 +279,14 @@ const chartData = {{ chart_data|safe }};
 if (chartData.length > 0) {
   const ctx = document.getElementById('chart');
   const materialColors = {
-    'Ouro': { bg: 'rgba(255, 215, 0, 0.75)', border: 'rgba(255, 215, 0, 1)' },
-    'Prata': { bg: 'rgba(192, 192, 192, 0.75)', border: 'rgba(192, 192, 192, 1)' },
-    'Platina': { bg: 'rgba(229, 228, 226, 0.65)', border: 'rgba(229, 228, 226, 1)' },
+    'Ouro': { bg: 'rgba(255, 215, 0, 0.7)', border: 'rgba(255, 215, 0, 1)' },
+    'Prata': { bg: 'rgba(192, 192, 192, 0.7)', border: 'rgba(192, 192, 192, 1)' },
+    'Platina': { bg: 'rgba(229, 228, 226, 0.6)', border: 'rgba(229, 228, 226, 1)' },
   };
-  const defaultColor = { bg: 'rgba(201, 169, 78, 0.55)', border: 'rgba(201, 169, 78, 1)' };
+  const defaultColor = { bg: 'rgba(201, 169, 78, 0.5)', border: 'rgba(201, 169, 78, 1)' };
 
   const bgColors = chartData.map(d => (materialColors[d.name] || defaultColor).bg);
   const borderColors = chartData.map(d => (materialColors[d.name] || defaultColor).border);
-
-  // Largura proporcional: quanto mais materiais, mais finas as barras
-  const count = chartData.length;
-  let barPct, catPct, maxThick;
-  if (count <= 1)       { barPct = 0.35; catPct = 0.4;  maxThick = 90;  }
-  else if (count === 2) { barPct = 0.45; catPct = 0.5;  maxThick = 80;  }
-  else if (count === 3) { barPct = 0.55; catPct = 0.6;  maxThick = 70;  }
-  else if (count === 4) { barPct = 0.6;  catPct = 0.65; maxThick = 60;  }
-  else                  { barPct = 0.7;  catPct = 0.75; maxThick = 50;  }
 
   new Chart(ctx, {
     type: 'bar',
@@ -275,24 +298,21 @@ if (chartData.length > 0) {
         backgroundColor: bgColors,
         borderColor: borderColors,
         borderWidth: 1.5,
-        borderRadius: 6,
-        maxBarThickness: maxThick,
-        barPercentage: barPct,
-        categoryPercentage: catPct,
+        borderRadius: 8,
+        maxBarThickness: 80,
+        barPercentage: 0.5,
+        categoryPercentage: 0.6,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: { left: 4, right: 4, top: 8, bottom: 4 }
-      },
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#1a1d27',
-          titleColor: '#ffffff',
-          bodyColor: '#dcdfe8',
+          titleColor: '#f0f1f5',
+          bodyColor: '#d0d3de',
           borderColor: '#2e3345',
           borderWidth: 1,
           padding: 12,
@@ -306,14 +326,13 @@ if (chartData.length > 0) {
       },
       scales: {
         x: {
-          ticks: { color: '#b0b4c8', font: { size: 12, weight: '600' } },
+          ticks: { color: '#a0a4b8', font: { size: 12, weight: '600' } },
           grid: { display: false },
           border: { color: 'rgba(46,51,69,.5)' }
         },
         y: {
-          beginAtZero: true,
           ticks: {
-            color: '#b0b4c8',
+            color: '#9498ad',
             font: { size: 11 },
             callback: function(v) { return v.toLocaleString('pt-BR') + ' g'; }
           },
@@ -323,6 +342,235 @@ if (chartData.length > 0) {
       }
     }
   });
+}
+
+// ── Gráfico: Preço pago vs Cotação do mercado ──
+if (chartData.length > 0) {
+  fetch('/api/purchase-vs-market/')
+    .then(r => r.json())
+    .then(pvmData => {
+      const purchases = pvmData.purchases || [];
+      const currentSpots = pvmData.current_spots || {};
+
+      if (purchases.length === 0) {
+        document.getElementById('pvm-status').textContent = 'Sem compras registradas';
+        return;
+      }
+
+      // Build chart data
+      const labels = purchases.map((p, i) => {
+        const shortLabel = p.type_label + ' ' + p.material_label;
+        return p.date_label;
+      });
+      const barData = purchases.map(p => p.price_per_pure_gram);
+      const lineData = purchases.map(p => p.market_price_per_gram);
+      const hasMarket = lineData.some(v => v !== null && v !== undefined);
+
+      // Color bars: green if bought below market, red if above, gold if no market data
+      const barColors = purchases.map((p, i) => {
+        if (p.market_price_per_gram == null) return 'rgba(201, 169, 78, 0.75)';
+        return p.price_per_pure_gram <= p.market_price_per_gram
+          ? 'rgba(74, 222, 128, 0.7)'   // bought below market = good
+          : 'rgba(248, 113, 113, 0.7)';  // bought above market = bad
+      });
+      const barBorders = purchases.map((p, i) => {
+        if (p.market_price_per_gram == null) return 'rgba(201, 169, 78, 1)';
+        return p.price_per_pure_gram <= p.market_price_per_gram
+          ? 'rgba(74, 222, 128, 1)'
+          : 'rgba(248, 113, 113, 1)';
+      });
+
+      // Current spot line (horizontal reference)
+      const primaryMaterial = purchases[0]?.material;
+      const currentSpot = currentSpots[primaryMaterial];
+      const currentSpotLine = currentSpot ? purchases.map(() => currentSpot) : null;
+
+      document.getElementById('pvm-status').textContent = hasMarket ? 'Com cotações históricas' : 'Cotações históricas indisponíveis';
+      document.getElementById('pvm-legend').style.display = 'flex';
+
+      // Proportional bar width
+      const count = purchases.length;
+      let barPct, catPct, maxThick;
+      if (count <= 2)       { barPct = 0.4;  catPct = 0.5;  maxThick = 70;  }
+      else if (count <= 4)  { barPct = 0.55; catPct = 0.65; maxThick = 60;  }
+      else if (count <= 8)  { barPct = 0.65; catPct = 0.75; maxThick = 50;  }
+      else                  { barPct = 0.75; catPct = 0.85; maxThick = 40;  }
+
+      const datasets = [
+        {
+          type: 'bar',
+          label: 'Preço pago (R$/g puro)',
+          data: barData,
+          backgroundColor: barColors,
+          borderColor: barBorders,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          maxBarThickness: maxThick,
+          barPercentage: barPct,
+          categoryPercentage: catPct,
+          order: 2,
+        }
+      ];
+
+      if (hasMarket) {
+        datasets.push({
+          type: 'line',
+          label: 'Cotação mercado na compra (R$/g)',
+          data: lineData,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.05)',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#4ade80',
+          pointBorderColor: '#1a1d27',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          tension: 0.3,
+          fill: false,
+          spanGaps: true,
+          order: 1,
+        });
+      }
+
+      if (currentSpotLine) {
+        datasets.push({
+          type: 'line',
+          label: 'Cotação atual (R$/g)',
+          data: currentSpotLine,
+          borderColor: 'rgba(96, 165, 250, 0.6)',
+          borderWidth: 2,
+          borderDash: [8, 4],
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          order: 0,
+        });
+      }
+
+      const pvmCtx = document.getElementById('pvmChart');
+      new Chart(pvmCtx, {
+        data: {
+          labels: labels,
+          datasets: datasets,
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a1d27',
+              titleColor: '#ffffff',
+              bodyColor: '#dcdfe8',
+              borderColor: '#2e3345',
+              borderWidth: 1,
+              padding: 14,
+              cornerRadius: 8,
+              displayColors: true,
+              callbacks: {
+                title: function(items) {
+                  const idx = items[0]?.dataIndex;
+                  if (idx == null) return '';
+                  const p = purchases[idx];
+                  return p.type_label + ' de ' + p.material_label + ' — ' + p.date_label;
+                },
+                label: function(context) {
+                  const v = context.parsed.y;
+                  if (v === null || v === undefined) return context.dataset.label + ': sem dados';
+                  return context.dataset.label + ': ' + fBRL(v);
+                },
+                afterBody: function(tooltipItems) {
+                  const idx = tooltipItems[0]?.dataIndex;
+                  if (idx == null) return [];
+                  const p = purchases[idx];
+                  const lines = [];
+                  lines.push('');
+                  lines.push('Peso bruto: ' + p.weight_grams.toFixed(2).replace('.', ',') + ' g');
+                  lines.push('Pureza: ' + p.purity.toFixed(1).replace('.', ',') + '%  →  ' + p.pure_grams.toFixed(2).replace('.', ',') + ' g puro');
+                  lines.push('Total pago: ' + fBRL(p.acquisition_value));
+                  lines.push('Preço/g bruto: ' + fBRL(p.price_per_gram) + '  →  Preço/g puro: ' + fBRL(p.price_per_pure_gram));
+                  if (p.market_price_per_gram != null && p.price_per_pure_gram > 0) {
+                    const diff = p.market_price_per_gram - p.price_per_pure_gram;
+                    const pct = ((diff / p.price_per_pure_gram) * 100).toFixed(1).replace('.', ',');
+                    if (diff >= 0) {
+                      lines.push('✓ Comprou ' + pct + '% abaixo do mercado');
+                    } else {
+                      lines.push('⚠ Comprou ' + pct.replace('-', '') + '% acima do mercado');
+                    }
+                  }
+                  if (p.serial_number) lines.push('Série: ' + p.serial_number);
+                  return lines;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#b0b4c8', font: { size: 11, weight: '600' }, maxRotation: 45 },
+              grid: { display: false },
+              border: { color: 'rgba(46,51,69,.5)' }
+            },
+            y: {
+              beginAtZero: false,
+              ticks: {
+                color: '#b0b4c8',
+                font: { size: 11 },
+                callback: function(v) { return 'R$ ' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+              },
+              grid: { color: 'rgba(46,51,69,.35)', lineWidth: 1 },
+              border: { display: false }
+            }
+          }
+        }
+      });
+
+      // Summary cards
+      let goodBuys = 0, badBuys = 0, totalSaved = 0;
+      purchases.forEach(p => {
+        if (p.market_price_per_gram != null) {
+          const diff = (p.market_price_per_gram - p.price_per_pure_gram) * p.pure_grams;
+          if (p.price_per_pure_gram <= p.market_price_per_gram) {
+            goodBuys++;
+            totalSaved += diff;
+          } else {
+            badBuys++;
+            totalSaved += diff;
+          }
+        }
+      });
+
+      if (goodBuys + badBuys > 0) {
+        const up = totalSaved >= 0;
+        const summaryDiv = document.getElementById('pvm-summary');
+        summaryDiv.innerHTML =
+          '<div class="row g-3">' +
+            '<div class="col-sm-4">' +
+              '<div style="border:1px solid var(--mv-border);border-radius:.625rem;padding:.85rem 1rem;background:var(--mv-surface2);">' +
+                '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#9ea2b6;font-weight:600;">Compras com bom preço</div>' +
+                '<div style="font-size:1.3rem;font-weight:700;color:#4ade80;margin-top:.2rem;">' + goodBuys + '<span style="font-size:.8rem;color:#787c90;font-weight:400;"> de ' + (goodBuys + badBuys) + '</span></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="col-sm-4">' +
+              '<div style="border:1px solid var(--mv-border);border-radius:.625rem;padding:.85rem 1rem;background:var(--mv-surface2);">' +
+                '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#9ea2b6;font-weight:600;">Compras acima do mercado</div>' +
+                '<div style="font-size:1.3rem;font-weight:700;color:#f87171;margin-top:.2rem;">' + badBuys + '<span style="font-size:.8rem;color:#787c90;font-weight:400;"> de ' + (goodBuys + badBuys) + '</span></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="col-sm-4">' +
+              '<div style="border:1px solid var(--mv-border);border-radius:.625rem;padding:.85rem 1rem;background:var(--mv-surface2);">' +
+                '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#9ea2b6;font-weight:600;">Economia total</div>' +
+                '<div style="font-size:1.3rem;font-weight:700;color:' + (up ? '#4ade80' : '#f87171') + ';margin-top:.2rem;">' + (up ? '+' : '') + fBRL(totalSaved) + '</div>' +
+                '<div style="font-size:.72rem;color:#787c90;">' + (up ? 'economizado vs mercado' : 'pago a mais vs mercado') + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        summaryDiv.style.display = 'block';
+      }
+    })
+    .catch(() => {
+      document.getElementById('pvm-status').textContent = 'Erro ao carregar dados';
+    });
 }
 </script>
 {% endblock %}
