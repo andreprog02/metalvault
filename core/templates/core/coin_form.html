@@ -1,0 +1,319 @@
+{% extends "core/base.html" %}
+{% load metal_tags %}
+{% block title %}{% if is_edit %}Editar moeda{% else %}Nova moeda{% endif %} — MetalVault{% endblock %}
+
+{% block extra_css %}
+<style>
+  .coin-form { max-width: 720px; margin: 0 auto; }
+  .cf-section {
+    background: var(--mv-surface); border: 1px solid var(--mv-border);
+    border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .cf-title {
+    font-size: .85rem; font-weight: 700; color: var(--mv-primary);
+    text-transform: uppercase; letter-spacing: .04em;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
+  }
+  .cf-label { font-size: .78rem; font-weight: 600; color: #b0b4c8; margin-bottom: .35rem; }
+  .cf-hint { font-size: .7rem; color: #787c90; margin-top: .25rem; }
+  .form-control, .form-select {
+    background: var(--mv-surface2) !important; border-color: var(--mv-border) !important;
+    color: #ffffff !important;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--mv-primary) !important;
+    box-shadow: 0 0 0 .15rem rgba(201,169,78,.12) !important;
+  }
+  .continent-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .6rem; border-radius: .375rem; font-size: .75rem; font-weight: 600;
+    background: var(--mv-primary-soft); color: var(--mv-primary); margin-top: .35rem;
+  }
+  .input-wrap { position: relative; }
+  .input-wrap .suffix {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    display: flex; align-items: center; padding: 0 .85rem;
+    color: #787c90; font-size: .82rem; font-weight: 600; pointer-events: none;
+  }
+  .input-wrap .prefix {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    display: flex; align-items: center; padding: 0 .75rem;
+    color: #9ea2b6; font-size: .85rem; font-weight: 700;
+    pointer-events: none; border-right: 1px solid var(--mv-border);
+    background: rgba(35,39,51,.6); border-radius: .5rem 0 0 .5rem;
+  }
+  .has-suffix { padding-right: 2.75rem !important; }
+  .has-prefix { padding-left: 3.25rem !important; }
+  .upload-area {
+    border: 2px dashed var(--mv-border); border-radius: .75rem;
+    padding: 1.5rem; text-align: center; cursor: pointer;
+    transition: all .2s; background: var(--mv-surface); position: relative; overflow: hidden;
+  }
+  .upload-area:hover { border-color: var(--mv-primary); }
+  .upload-area.has-file { border-color: var(--mv-primary); border-style: solid; }
+  .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="coin-form">
+  <div class="mb-3">
+    <a href="{% url 'inventory' %}?tab=coins" style="font-size:.82rem; color:#9ea2b6; text-decoration:none;">
+      <i class="bi bi-arrow-left me-1"></i> Voltar ao inventário
+    </a>
+  </div>
+  <h1 class="fw-bold mb-1" style="font-size:1.75rem; color:#ffffff;">{% if is_edit %}Editar moeda{% else %}Nova moeda{% endif %}</h1>
+  <p style="font-size:.875rem; color:#9ea2b6; margin-bottom:1.5rem;">{% if is_edit %}Atualize os dados da moeda{% else %}Cadastre uma moeda no seu acervo{% endif %}</p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem;">
+      <div style="font-weight:700;color:#f87171;font-size:.85rem;margin-bottom:.5rem;"><i class="bi bi-exclamation-triangle me-1"></i> Corrija os erros abaixo:</div>
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+        <div style="font-size:.8rem;color:#fca5a5;">• {{ field }}: {{ error }}</div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Origem -->
+    <div class="cf-section">
+      <div class="cf-title"><i class="bi bi-globe-americas"></i> Origem</div>
+      <div class="row g-3">
+        <div class="col-sm-8">
+          <div class="cf-label">País de origem</div>
+          {{ form.country }}
+          {% if form.country.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.country.errors.0 }}</div>{% endif %}
+          <div id="continentBadge" class="continent-badge" style="display:none;"></div>
+        </div>
+        <div class="col-sm-4">
+          <div class="cf-label">Ano de fabricação</div>
+          {{ form.year }}
+          {% if form.year.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.year.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Identificação -->
+    <div class="cf-section">
+      <div class="cf-title"><i class="bi bi-tag"></i> Identificação</div>
+      <div class="row g-3">
+        <div class="col-sm-4">
+          <div class="cf-label">Valor de face</div>
+          {{ form.denomination }}
+          {% if form.denomination.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.denomination.errors.0 }}</div>{% endif %}
+          <div class="cf-hint">Valor gravado na moeda</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="cf-label">Moeda</div>
+          {{ form.currency }}
+          {% if form.currency.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.currency.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-sm-4" id="currencyCustomWrap" style="display:none;">
+          <div class="cf-label">Nome da moeda</div>
+          {{ form.currency_custom }}
+          {% if form.currency_custom.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.currency_custom.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-12">
+          <div class="cf-label">Descrição / Nome da peça</div>
+          {{ form.description }}
+          {% if form.description.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.description.errors.0 }}</div>{% endif %}
+          <div class="cf-hint">Ex: Liberty Head Double Eagle, Maple Leaf, Krugerrand</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Composição -->
+    <div class="cf-section">
+      <div class="cf-title"><i class="bi bi-gem"></i> Composição</div>
+      <div class="row g-3">
+        <div class="col-sm-4">
+          <div class="cf-label">Metal</div>
+          {{ form.metal }}
+          {% if form.metal.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.metal.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-sm-4" id="metalCustomWrap" style="display:none;">
+          <div class="cf-label">Nome do metal</div>
+          {{ form.metal_custom }}
+          {% if form.metal_custom.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.metal_custom.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-sm-4">
+          <div class="cf-label">Pureza</div>
+          <div class="input-wrap">
+            {{ form.purity_percentage }}
+          {% if form.purity_percentage.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.purity_percentage.errors.0 }}</div>{% endif %}
+            <span class="suffix">%</span>
+          </div>
+          <div class="cf-hint">Ex: 90% para moedas de ouro americanas</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="cf-label">Peso total</div>
+          <div class="input-wrap">
+            {{ form.weight_grams }}
+          {% if form.weight_grams.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.weight_grams.errors.0 }}</div>{% endif %}
+            <span class="suffix">g</span>
+          </div>
+          <div id="pureGrams" class="continent-badge" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aquisição -->
+    <div class="cf-section">
+      <div class="cf-title"><i class="bi bi-wallet2"></i> Aquisição</div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="cf-label">Valor pago</div>
+          <div class="input-wrap">
+            <span class="prefix">R$</span>
+            <input type="text" name="acquisition_value" id="id_acquisition_value"
+                   class="form-control has-prefix brl-input"
+                   value="{{ form.acquisition_value.value|default:'' }}"
+                   placeholder="0,00" inputmode="decimal">
+          </div>
+          {% if form.acquisition_value.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.acquisition_value.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-sm-6">
+          <div class="cf-label">Data da compra</div>
+          {{ form.acquisition_date }}
+          {% if form.acquisition_date.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.acquisition_date.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-12">
+          <div class="cf-label">Local de armazenamento</div>
+          {{ form.location }}
+          {% if form.location.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.location.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Foto e notas -->
+    <div class="cf-section">
+      <div class="cf-title"><i class="bi bi-image"></i> Foto e observações</div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="upload-area" id="photoArea">
+            <input type="file" name="photo" accept="image/*" id="photoInput">
+            <div style="font-size:1.5rem;color:#5c6078;"><i class="bi bi-image"></i></div>
+            <div style="font-size:.8rem;font-weight:700;color:#dcdfe8;" id="photoLabel">{% if is_edit and coin.photo %}Substituir foto{% else %}Foto da moeda{% endif %}</div>
+            <div style="font-size:.68rem;color:#5c6078;">JPG ou PNG</div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="cf-label">Observações</div>
+          {{ form.notes }}
+          {% if form.notes.errors %}<div style="color:#f87171;font-size:.78rem;margin-top:.25rem;">{{ form.notes.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <a href="{% url 'inventory' %}?tab=coins" class="btn btn-outline-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-check-lg me-1"></i> {% if is_edit %}Salvar{% else %}Cadastrar moeda{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  // Continent auto-display
+  const countrySelect = document.getElementById('id_country');
+  const continentBadge = document.getElementById('continentBadge');
+  const continentMap = {};
+
+  fetch('/api/countries/')
+    .then(r => r.json())
+    .then(data => {
+      data.countries.forEach(c => { continentMap[c.code] = data.continents[c.continent] || ''; });
+      updateContinent();
+    });
+
+  function updateContinent() {
+    const code = countrySelect.value;
+    const name = continentMap[code];
+    if (name) {
+      continentBadge.innerHTML = '<i class="bi bi-globe2"></i> ' + name;
+      continentBadge.style.display = 'inline-flex';
+    } else {
+      continentBadge.style.display = 'none';
+    }
+  }
+  countrySelect.addEventListener('change', updateContinent);
+
+  // Currency custom toggle
+  const currencySelect = document.querySelector('[name="currency"]');
+  const currencyCustom = document.getElementById('currencyCustomWrap');
+  currencySelect.addEventListener('change', function() {
+    currencyCustom.style.display = this.value === 'other' ? 'block' : 'none';
+  });
+  if (currencySelect.value === 'other') currencyCustom.style.display = 'block';
+
+  // Metal custom toggle
+  const metalSelect = document.querySelector('[name="metal"]');
+  const metalCustom = document.getElementById('metalCustomWrap');
+  metalSelect.addEventListener('change', function() {
+    metalCustom.style.display = this.value === 'other' ? 'block' : 'none';
+  });
+  if (metalSelect.value === 'other') metalCustom.style.display = 'block';
+
+  // Pure grams calc
+  const weightInput = document.getElementById('id_weight_grams');
+  const purityInput = document.getElementById('id_purity_percentage');
+  const pureGrams = document.getElementById('pureGrams');
+  function updatePure() {
+    const w = parseFloat(weightInput?.value || 0);
+    const p = parseFloat(purityInput?.value || 0);
+    if (w > 0 && p > 0) {
+      const pure = (w * p / 100).toFixed(4).replace('.', ',');
+      pureGrams.innerHTML = '<i class="bi bi-gem"></i> ' + pure + ' g de metal puro';
+      pureGrams.style.display = 'inline-flex';
+    } else {
+      pureGrams.style.display = 'none';
+    }
+  }
+  weightInput?.addEventListener('input', updatePure);
+  purityInput?.addEventListener('input', updatePure);
+  updatePure();
+
+  // BRL formatting
+  function formatBRL(value) {
+    let digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    while (digits.length < 3) digits = '0' + digits;
+    const intPart = digits.slice(0, -2).replace(/^0+/, '') || '0';
+    const decPart = digits.slice(-2);
+    return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + decPart;
+  }
+  document.querySelectorAll('.brl-input').forEach(input => {
+    input.addEventListener('input', function() {
+      const pos = this.selectionStart, oldLen = this.value.length;
+      if (this.value.match(/^\d[\d.,]*$/)) {
+        this.value = formatBRL(this.value);
+        const diff = this.value.length - oldLen;
+        this.setSelectionRange(pos + diff, pos + diff);
+      }
+    });
+  });
+
+  // File upload feedback
+  const photoInput = document.getElementById('photoInput');
+  const photoArea = document.getElementById('photoArea');
+  const photoLabel = document.getElementById('photoLabel');
+  photoInput?.addEventListener('change', function() {
+    if (this.files.length > 0) { photoArea.classList.add('has-file'); photoLabel.textContent = this.files[0].name; }
+  });
+
+  // Add has-suffix
+  document.querySelectorAll('.input-wrap .suffix').forEach(s => {
+    const input = s.parentElement.querySelector('.form-control');
+    if (input) input.classList.add('has-suffix');
+  });
+})();
+</script>
+{% endblock %}

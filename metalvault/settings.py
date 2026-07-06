@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-metalvault-dev-key-change-in-production")
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1")
+SECRET_KEY = "django-insecure-metalvault-dev-key-change-in-production"
+DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -46,9 +46,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "metalvault.wsgi.application"
 
-# ══════════════════════════════════════
-# PostgreSQL — credenciais via variável de ambiente
-# ══════════════════════════════════════
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -59,6 +56,7 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
+
 
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = "pt-br"
@@ -73,3 +71,21 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"
+
+
+# ══════════════════════════════════════
+# E-mail (recuperação de senha)
+# ══════════════════════════════════════
+# Para desenvolvimento: exibe o email no terminal
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Para produção: configure com Gmail ou outro SMTP
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "MetalVault <noreply@metalvault.com>")
+
+PASSWORD_RESET_TIMEOUT = 86400  # 24 horas

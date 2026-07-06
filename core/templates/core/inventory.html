@@ -169,7 +169,9 @@
     </p>
   </div>
   {% if tab == 'metals' %}
-    <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Novo metal</a>
+    <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nova joia</a>
+  {% elif tab == 'coins' %}
+    <a href="{% url 'coin_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nova moeda</a>
   {% else %}
     <a href="{% url 'banknote_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nova cédula</a>
   {% endif %}
@@ -178,12 +180,16 @@
 <!-- ═══════ TABS ═══════ -->
 <div class="inv-tabs">
   <a href="?tab=metals" class="inv-tab {% if tab == 'metals' %}active{% endif %}">
-    <i class="bi bi-gem"></i> Metais
+    <i class="bi bi-gem"></i> Joias
     <span class="tab-count">{{ metals|length }}</span>
   </a>
   <a href="?tab=banknotes" class="inv-tab {% if tab == 'banknotes' %}active{% endif %}">
     <i class="bi bi-cash-stack"></i> Cédulas
     <span class="tab-count">{{ banknotes|length }}</span>
+  </a>
+  <a href="?tab=coins" class="inv-tab {% if tab == 'coins' %}active{% endif %}">
+    <i class="bi bi-coin"></i> Moedas
+    <span class="tab-count">{{ coins|length }}</span>
   </a>
 </div>
 
@@ -249,7 +255,6 @@
           <th class="text-end">Peso</th>
           <th class="text-end">Pureza</th>
           <th>Local</th>
-          <th>Data aquisição</th>
           <th class="text-end">Valor aquisição</th>
           <th class="text-end" style="width:120px;">Ações</th>
         </tr>
@@ -286,7 +291,6 @@
               <span class="loc-chip" style="color:#5c6078;"><i class="bi bi-dash"></i> Sem local</span>
             {% endif %}
           </td>
-          <td><span class="date-cell">{{ m.acquisition_date|date_br }}</span></td>
           <td class="text-end val-cell">{{ m.acquisition_value|brl }}</td>
           <td class="text-end">
             <div class="act-group">
@@ -315,7 +319,7 @@
       {% endif %}
     </div>
     {% if not q and material_filter == 'all' and type_filter == 'all' and location_filter == 'all' %}
-      <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Cadastrar primeiro metal</a>
+      <a href="{% url 'metal_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Cadastrar primeira joia</a>
     {% else %}
       <a href="?tab=metals" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Limpar filtros</a>
     {% endif %}
@@ -323,7 +327,7 @@
   {% endif %}
 </div>
 
-{% else %}
+{% elif tab == 'banknotes' %}
 
 <!-- ═══════ BANKNOTES SUMMARY ═══════ -->
 {% if banknotes %}
@@ -398,6 +402,94 @@
   </div>
   {% endif %}
 </div>
+
+{% elif tab == 'coins' %}
+
+<!-- ═══════ COINS TABLE ═══════ -->
+<div class="card" style="overflow:hidden;">
+  {% if coins %}
+  <div class="table-responsive">
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th>País</th>
+          <th>Continente</th>
+          <th>Ano</th>
+          <th>Denominação</th>
+          <th>Metal</th>
+          <th class="text-end">Pureza</th>
+          <th class="text-end">Peso</th>
+          <th>Local</th>
+          <th>Data aquisição</th>
+          <th class="text-end">Valor aquisição</th>
+          <th class="text-end" style="width:120px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in coins %}
+        <tr>
+          <td>
+            <span class="type-chip">
+              <span class="type-emoji">🪙</span>
+              {{ c.country_name }}
+            </span>
+          </td>
+          <td><span style="font-size:.78rem;color:#b0b4c8;">{{ c.continent_name }}</span></td>
+          <td><span style="font-weight:600;color:#ffffff;">{{ c.year|default:"—" }}</span></td>
+          <td>
+            <div style="font-weight:600;color:#ffffff;">{{ c.denomination }} {{ c.currency_label }}</div>
+            {% if c.description %}<div style="font-size:.72rem;color:#787c90;">{{ c.description }}</div>{% endif %}
+          </td>
+          <td>
+            <span class="mat-badge {{ c.metal }}">
+              <span class="dot"></span>
+              {{ c.metal_label }}
+            </span>
+          </td>
+          <td class="text-end">
+            <div class="purity-cell justify-content-end">
+              <div class="purity-bar-wrap"><div class="purity-bar-fill" style="width:{{ c.purity_percentage }}%;"></div></div>
+              <span class="purity-text">{{ c.purity_percentage|purity }}</span>
+            </div>
+          </td>
+          <td class="text-end">
+            <div class="weight-main">{{ c.weight_grams|grams }}</div>
+            <div class="weight-sub">{{ c.weight_grams|troy_oz }}</div>
+          </td>
+          <td>
+            {% if c.location %}
+              <span class="loc-chip"><i class="bi bi-geo-alt-fill"></i> {{ c.location.name }}</span>
+            {% else %}
+              <span class="loc-chip" style="color:#5c6078;"><i class="bi bi-dash"></i> Sem local</span>
+            {% endif %}
+          </td>
+          <td><span class="date-cell">{{ c.acquisition_date|date_br }}</span></td>
+          <td class="text-end val-cell">{{ c.acquisition_value|brl }}</td>
+          <td class="text-end">
+            <div class="act-group">
+              <a href="{% url 'coin_detail' c.pk %}" class="act-btn" title="Ver detalhes"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'coin_edit' c.pk %}" class="act-btn" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="post" action="{% url 'coin_delete' c.pk %}" class="d-inline" onsubmit="return confirm('Remover esta moeda?')">
+                {% csrf_token %}
+                <button class="act-btn danger" title="Remover"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-coin"></i></div>
+    <div class="empty-title">Nenhuma moeda cadastrada</div>
+    <div class="empty-desc">Adicione moedas de coleção ao seu acervo.</div>
+    <a href="{% url 'coin_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Cadastrar primeira moeda</a>
+  </div>
+  {% endif %}
+</div>
+
 {% endif %}
 {% endblock %}
 

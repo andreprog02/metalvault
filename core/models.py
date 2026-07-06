@@ -191,3 +191,113 @@ class Banknote(models.Model):
         if self.serial_number:
             parts.append(f"série {self.serial_number}")
         return ", ".join(parts)
+
+
+class CoinMetal(models.TextChoices):
+    GOLD = "gold", "Ouro"
+    SILVER = "silver", "Prata"
+    NICKEL = "nickel", "Níquel"
+    COPPER = "copper", "Cobre"
+    BRONZE = "bronze", "Bronze"
+    PLATINUM = "platinum", "Platina"
+    ZINC = "zinc", "Zinco"
+    ALUMINUM = "aluminum", "Alumínio"
+    IRON = "iron", "Ferro"
+    BIMETALLIC = "bimetallic", "Bimetálica"
+    OTHER = "other", "Outro"
+
+
+class CoinCurrency(models.TextChoices):
+    DOLLAR = "dollar", "Dólar"
+    EURO = "euro", "Euro"
+    POUND = "pound", "Libra"
+    REAL = "real", "Real"
+    PESO = "peso", "Peso"
+    FRANC = "franc", "Franco"
+    MARK = "mark", "Marco"
+    LIRA = "lira", "Lira"
+    FLORIN = "florin", "Florim"
+    DUCAT = "ducat", "Ducado"
+    CROWN = "crown", "Coroa"
+    SHILLING = "shilling", "Xelim"
+    DRACHMA = "drachma", "Dracma"
+    ESCUDO = "escudo", "Escudo"
+    CRUZEIRO = "cruzeiro", "Cruzeiro"
+    REIS = "reis", "Réis"
+    OTHER = "other", "Outra"
+
+
+class Coin(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coins")
+
+    # Origin
+    country = models.CharField("País de origem", max_length=3, default="BR")
+    continent = models.CharField("Continente", max_length=3, blank=True, default="")
+
+    # Identification
+    year = models.IntegerField("Ano de fabricação", null=True, blank=True)
+    denomination = models.IntegerField("Valor de face", default=0)
+    currency = models.CharField("Moeda", max_length=15, choices=CoinCurrency.choices, default=CoinCurrency.OTHER)
+    currency_custom = models.CharField("Moeda personalizada", max_length=100, blank=True, default="")
+    description = models.CharField("Descrição / Nome", max_length=300, blank=True, default="")
+
+    # Physical
+    weight_grams = models.DecimalField("Peso (g)", max_digits=14, decimal_places=4, default=0)
+    metal = models.CharField("Metal", max_length=15, choices=CoinMetal.choices, default=CoinMetal.GOLD)
+    metal_custom = models.CharField("Metal personalizado", max_length=100, blank=True, default="")
+    purity_percentage = models.DecimalField("Pureza (%)", max_digits=6, decimal_places=3, default=90)
+
+    # Acquisition
+    acquisition_date = models.DateField("Data de aquisição")
+    acquisition_value = models.DecimalField("Valor de aquisição (R$)", max_digits=14, decimal_places=2, default=0)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="coins")
+
+    # Files
+    photo = models.ImageField("Foto", upload_to="coins/photos/", blank=True)
+    notes = models.TextField("Observações", blank=True, default="")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.denomination} {self.currency_label()} ({self.country_name()}) {self.year or ''}"
+
+    def save(self, *args, **kwargs):
+        from .countries import get_continent_code
+        self.continent = get_continent_code(self.country)
+        super().save(*args, **kwargs)
+
+    def country_name(self):
+        from .countries import get_country_name
+        return get_country_name(self.country)
+
+    def continent_name(self):
+        from .countries import get_continent_name
+        return get_continent_name(self.country)
+
+    def currency_label(self):
+        if self.currency == "other" and self.currency_custom:
+            return self.currency_custom
+        return self.get_currency_display()
+
+    def metal_label(self):
+        if self.metal == "other" and self.metal_custom:
+            return self.metal_custom
+        return self.get_metal_display()
+
+    def pure_grams(self):
+        return float(self.weight_grams) * float(self.purity_percentage) / 100
+
+    def price_per_gram(self):
+        if self.weight_grams and self.weight_grams > 0:
+            return float(self.acquisition_value) / float(self.weight_grams)
+        return 0
+
+    def price_per_pure_gram(self):
+        pg = self.pure_grams()
+        if pg > 0:
+            return float(self.acquisition_value) / pg
+        return 0

@@ -1,33 +1,220 @@
 {% extends "core/base.html" %}
+{% load metal_tags %}
 {% block title %}Locais — MetalVault{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Location cards grid ── */
+  .loc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ── Individual card ── */
+  .loc-card {
+    background: var(--mv-surface);
+    border: 1px solid var(--mv-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all .25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .loc-card:hover {
+    border-color: rgba(201,169,78,.35);
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    transform: translateY(-2px);
+  }
+
+  /* Gold accent bar at top */
+  .loc-card::before {
+    content: '';
+    position: absolute; top: 0; left: 1.5rem; right: 1.5rem; height: 3px;
+    background: linear-gradient(90deg, var(--mv-primary), rgba(201,169,78,.2));
+    border-radius: 0 0 3px 3px;
+  }
+
+  /* ── Card header ── */
+  .loc-header {
+    display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem;
+  }
+  .loc-icon {
+    width: 3rem; height: 3rem; border-radius: .75rem;
+    background: var(--mv-primary-soft);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mv-primary); font-size: 1.25rem; flex-shrink: 0;
+  }
+  .loc-name {
+    font-size: 1.1rem; font-weight: 700; color: #ffffff;
+    line-height: 1.3;
+  }
+  .loc-desc {
+    font-size: .82rem; color: #9ea2b6; margin-top: .2rem;
+    line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── Stats row ── */
+  .loc-stats {
+    display: flex; gap: .5rem; margin-bottom: 1.25rem;
+  }
+  .loc-stat {
+    flex: 1;
+    background: var(--mv-surface2);
+    border: 1px solid rgba(46,51,69,.5);
+    border-radius: .625rem;
+    padding: .65rem .75rem;
+    text-align: center;
+  }
+  .loc-stat .ls-value {
+    font-size: 1.15rem; font-weight: 700; color: #ffffff;
+    font-variant-numeric: tabular-nums;
+  }
+  .loc-stat .ls-value.accent { color: var(--mv-primary); }
+  .loc-stat .ls-label {
+    font-size: .62rem; text-transform: uppercase; letter-spacing: .04em;
+    color: #787c90; font-weight: 600; margin-top: .15rem;
+  }
+
+  /* ── Card actions ── */
+  .loc-actions {
+    display: flex; gap: .5rem; justify-content: flex-end;
+    padding-top: .75rem;
+    border-top: 1px solid rgba(46,51,69,.4);
+  }
+  .loc-act {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .4rem .85rem; border-radius: .5rem;
+    font-size: .78rem; font-weight: 600;
+    border: 1px solid var(--mv-border); background: transparent;
+    color: #b0b4c8; cursor: pointer; text-decoration: none;
+    transition: all .15s;
+  }
+  .loc-act:hover {
+    background: var(--mv-surface2); color: #ffffff; border-color: #4a4f65;
+  }
+  .loc-act.danger:hover {
+    background: rgba(248,113,113,.08); color: #f87171; border-color: rgba(248,113,113,.3);
+  }
+  .loc-act i { font-size: .8rem; }
+
+  /* ── Empty state ── */
+  .loc-empty {
+    text-align: center; padding: 5rem 2rem;
+  }
+  .loc-empty-icon {
+    width: 5.5rem; height: 5.5rem; border-radius: 1.5rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--mv-primary-soft); margin-bottom: 1.5rem;
+  }
+  .loc-empty-icon i { font-size: 2.5rem; color: var(--mv-primary); }
+  .loc-empty-title { font-size: 1.2rem; font-weight: 700; color: #ffffff; margin-bottom: .4rem; }
+  .loc-empty-desc { font-size: .875rem; color: #9ea2b6; margin-bottom: 1.5rem; max-width: 360px; margin-left: auto; margin-right: auto; }
+
+  /* ── Summary bar ── */
+  .loc-summary {
+    display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  .loc-summary-item { display: flex; align-items: center; gap: .5rem; }
+  .loc-summary-item .lsi-icon { color: var(--mv-primary); font-size: .9rem; }
+  .loc-summary-item .lsi-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: #9ea2b6; font-weight: 600; }
+  .loc-summary-item .lsi-value { font-size: .9rem; font-weight: 700; color: #ffffff; }
+
+  @media (max-width: 576px) {
+    .loc-grid { grid-template-columns: 1fr; }
+    .loc-stats { flex-wrap: wrap; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
   <div>
-    <h1 class="fw-bold" style="font-size:1.75rem;">Locais de armazenamento</h1>
-    <p class="text-muted-mv mb-0" style="font-size:.875rem;">Gerencie cofres, bancos e demais locais.</p>
+    <h1 class="fw-bold" style="font-size:1.75rem; color:#ffffff;">Locais de armazenamento</h1>
+    <p class="mb-0" style="font-size:.875rem; color:#9ea2b6;">Gerencie cofres, bancos e demais locais do seu acervo</p>
   </div>
-  <a href="{% url 'location_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo local</a>
+  <a href="{% url 'location_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Novo local</a>
 </div>
-<div class="card">
-  <div class="card-body p-0">
-    {% if locations %}
-    <ul class="list-unstyled mb-0">
-      {% for loc in locations %}
-      <li class="d-flex align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom border-mv{% endif %}">
-        <div class="stat-icon"><i class="bi bi-geo-alt-fill"></i></div>
-        <div class="flex-grow-1">
-          <div class="fw-medium">{{ loc.name }}</div>
-          {% if loc.description %}<div class="text-muted-mv" style="font-size:.85rem;">{{ loc.description }}</div>{% endif %}
-          <div class="text-muted-mv" style="font-size:.75rem;">{{ loc.metal_count_val }} {{ loc.metal_count_val|pluralize:"metal,metais" }}</div>
-        </div>
-        <a href="{% url 'location_edit' loc.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
-        <form method="post" action="{% url 'location_delete' loc.pk %}" class="d-inline" onsubmit="return confirm('Remover este local?')">{% csrf_token %}<button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button></form>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <div class="text-center py-5 text-muted-mv">Nenhum local cadastrado.</div>
+
+{% if locations %}
+
+<!-- ═══════ SUMMARY ═══════ -->
+<div class="loc-summary">
+  <div class="loc-summary-item">
+    <i class="bi bi-geo-alt-fill lsi-icon"></i>
+    <div>
+      <div class="lsi-label">Locais</div>
+      <div class="lsi-value">{{ locations|length }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CARDS GRID ═══════ -->
+<div class="loc-grid">
+  {% for loc in locations %}
+  <div class="loc-card">
+    <div class="loc-header">
+      <div class="loc-icon">
+        <i class="bi bi-{% if 'cofre' in loc.name|lower or 'safe' in loc.name|lower %}safe{% elif 'banco' in loc.name|lower or 'bank' in loc.name|lower %}bank{% elif 'casa' in loc.name|lower or 'home' in loc.name|lower %}house-door{% elif 'gaveta' in loc.name|lower %}archive{% else %}geo-alt{% endif %}-fill"></i>
+      </div>
+      <div class="flex-grow-1">
+        <div class="loc-name">{{ loc.name }}</div>
+        {% if loc.description %}
+          <div class="loc-desc">{{ loc.description }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="loc-stats">
+      <div class="loc-stat">
+        <div class="ls-value">{{ loc.metal_count_val }}</div>
+        <div class="ls-label">{{ loc.metal_count_val|pluralize:"Metal,Metais" }}</div>
+      </div>
+      <div class="loc-stat">
+        <div class="ls-value">{{ loc.banknote_count_val }}</div>
+        <div class="ls-label">{{ loc.banknote_count_val|pluralize:"Cédula,Cédulas" }}</div>
+      </div>
+      <div class="loc-stat">
+        <div class="ls-value accent">{% if loc.total_metal_value %}{{ loc.total_metal_value|brl }}{% else %}R$ 0,00{% endif %}</div>
+        <div class="ls-label">Valor em metais</div>
+      </div>
+    </div>
+
+    {% if loc.total_metal_grams %}
+    <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:1rem; padding:.5rem .75rem; background:var(--mv-surface2); border-radius:.5rem; border:1px solid rgba(46,51,69,.4);">
+      <i class="bi bi-speedometer" style="color:var(--mv-primary); font-size:.85rem;"></i>
+      <span style="font-size:.78rem; color:#9ea2b6;">Peso total:</span>
+      <span style="font-size:.82rem; font-weight:700; color:#ffffff;">{{ loc.total_metal_grams|grams }}</span>
+      <span style="font-size:.72rem; color:#787c90;">{{ loc.total_metal_grams|troy_oz }}</span>
+    </div>
     {% endif %}
+
+    <div class="loc-actions">
+      <a href="{% url 'location_edit' loc.pk %}" class="loc-act">
+        <i class="bi bi-pencil"></i> Editar
+      </a>
+      <form method="post" action="{% url 'location_delete' loc.pk %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja remover o local \'{{ loc.name }}\'?{% if loc.metal_count_val > 0 %}\n\n⚠ Existem {{ loc.metal_count_val }} metais neste local.{% endif %}')">
+        {% csrf_token %}
+        <button class="loc-act danger" type="submit">
+          <i class="bi bi-trash3"></i> Remover
+        </button>
+      </form>
+    </div>
   </div>
+  {% endfor %}
 </div>
+
+{% else %}
+
+<!-- ═══════ EMPTY STATE ═══════ -->
+<div class="loc-empty">
+  <div class="loc-empty-icon"><i class="bi bi-geo-alt"></i></div>
+  <div class="loc-empty-title">Nenhum local cadastrado</div>
+  <div class="loc-empty-desc">Crie locais para organizar onde seus metais e cédulas estão guardados — cofres, bancos, gavetas.</div>
+  <a href="{% url 'location_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Criar primeiro local</a>
+</div>
+
+{% endif %}
 {% endblock %}

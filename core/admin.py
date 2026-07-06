@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Metal, Banknote, Location, MetalPhoto
+from .models import Metal, Banknote, Location, MetalPhoto, Coin
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
@@ -17,3 +17,8 @@ class BanknoteAdmin(admin.ModelAdmin):
 @admin.register(MetalPhoto)
 class MetalPhotoAdmin(admin.ModelAdmin):
     list_display = ("metal", "sort_order", "created_at")
+
+@admin.register(Coin)
+class CoinAdmin(admin.ModelAdmin):
+    list_display = ("country", "year", "denomination", "currency", "metal", "acquisition_value", "user")
+    list_filter = ("country", "metal", "currency")

@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Metal, Banknote, Location
+from .models import Metal, Banknote, Location, Coin
 
 
 def parse_brl(value):
@@ -194,3 +194,49 @@ class IrpfEditForm(forms.Form):
         choices=[("auto", "Automático (regra de R$ 5.000)"), ("always", "Sempre incluir"), ("never", "Nunca incluir")],
         widget=forms.Select(attrs={"class": "form-select"}),
     )
+
+
+class CoinForm(forms.ModelForm):
+    from .countries import COUNTRY_CHOICES as _CC
+    country = forms.ChoiceField(
+        label="País de origem",
+        choices=_CC,
+        widget=forms.Select(attrs={"class": "form-select", "id": "id_country"}),
+    )
+    acquisition_value = BRLField(
+        label="Valor de aquisição (R$)",
+        min_value=Decimal("0"),
+        required=True,
+    )
+
+    class Meta:
+        model = Coin
+        fields = (
+            "country", "year", "denomination", "currency", "currency_custom",
+            "description", "weight_grams", "metal", "metal_custom", "purity_percentage",
+            "acquisition_date", "acquisition_value", "location", "photo", "notes",
+        )
+        widgets = {
+            "year": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ex: 1889", "min": "1", "max": "2030"}),
+            "denomination": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Ex: 20", "min": "0"}),
+            "currency": forms.Select(attrs={"class": "form-select"}),
+            "currency_custom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nome da moeda"}),
+            "description": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Liberty Head Double Eagle"}),
+            "weight_grams": forms.NumberInput(attrs={"class": "form-control", "step": "0.0001", "min": "0", "placeholder": "Ex: 33.4360"}),
+            "metal": forms.Select(attrs={"class": "form-select"}),
+            "metal_custom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nome do metal"}),
+            "purity_percentage": forms.NumberInput(attrs={"class": "form-control", "step": "0.001", "min": "0", "max": "100", "placeholder": "90"}),
+            "acquisition_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "location": forms.Select(attrs={"class": "form-select"}),
+            "photo": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
+            "notes": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Observações opcionais"}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields["location"].queryset = Location.objects.filter(user=user)
+        self.fields["location"].required = False
+        self.fields["location"].empty_label = "Nenhum"
+        if self.instance and self.instance.pk and self.instance.acquisition_value is not None:
+            self.initial["acquisition_value"] = format_brl_initial(self.instance.acquisition_value)

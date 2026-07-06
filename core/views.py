@@ -14,8 +14,8 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum, Count
 
 from django.db import models as db_models
-from .models import Metal, Banknote, Location, MetalPhoto, GRAMS_PER_TROY_OUNCE
-from .forms import SignUpForm, LoginForm, MetalForm, BanknoteForm, LocationForm, IrpfEditForm
+from .models import Metal, Banknote, Location, MetalPhoto, Coin, GRAMS_PER_TROY_OUNCE
+from .forms import SignUpForm, LoginForm, MetalForm, BanknoteForm, LocationForm, IrpfEditForm, CoinForm
 
 
 # ---------- AUTH ----------
@@ -59,9 +59,10 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     metals = Metal.objects.filter(user=request.user)
-    total_items = metals.count()
-    total_value = metals.aggregate(s=Sum("acquisition_value"))["s"] or 0
-    total_grams = metals.aggregate(s=Sum("weight_grams"))["s"] or 0
+    coins = Coin.objects.filter(user=request.user)
+    total_items = metals.count() + coins.count()
+    total_value = (metals.aggregate(s=Sum("acquisition_value"))["s"] or 0) + (coins.aggregate(s=Sum("acquisition_value"))["s"] or 0)
+    total_grams = (metals.aggregate(s=Sum("weight_grams"))["s"] or 0) + (coins.aggregate(s=Sum("weight_grams"))["s"] or 0)
 
     by_material = defaultdict(lambda: {"grams": Decimal(0), "value": Decimal(0), "count": 0, "label": "", "key": ""})
     for m in metals:
@@ -71,6 +72,13 @@ def dashboard(request):
         by_material[label]["count"] += 1
         by_material[label]["label"] = label
         by_material[label]["key"] = m.material
+    for c in coins:
+        label = c.metal_label()
+        by_material[label]["grams"] += c.weight_grams
+        by_material[label]["value"] += c.acquisition_value
+        by_material[label]["count"] += 1
+        by_material[label]["label"] = label
+        by_material[label]["key"] = c.metal
 
     chart_data = []
     for d in by_material.values():
@@ -90,6 +98,8 @@ def dashboard(request):
         "materials_count": len(by_material),
         "by_material": dict(by_material),
         "chart_data": json.dumps(chart_data),
+        "metal_count": metals.count(),
+        "coin_count": coins.count(),
     })
 
 
@@ -247,6 +257,7 @@ def inventory(request):
     tab = request.GET.get("tab", "metals")
     metals = Metal.objects.filter(user=request.user).select_related("location")
     banknotes = Banknote.objects.filter(user=request.user).select_related("location")
+    coins = Coin.objects.filter(user=request.user).select_related("location")
     locations = Location.objects.filter(user=request.user)
 
     # Filters
@@ -272,6 +283,7 @@ def inventory(request):
     return render(request, "core/inventory.html", {
         "metals": metals,
         "banknotes": banknotes,
+        "coins": coins,
         "locations": locations,
         "tab": tab,
         "q": q,
@@ -379,7 +391,10 @@ def banknote_delete(request, pk):
 @login_required
 def locations(request):
     locs = Location.objects.filter(user=request.user).annotate(
-        metal_count_val=Count("metals"),
+        metal_count_val=Count("metals", distinct=True),
+        banknote_count_val=Count("banknotes", distinct=True),
+        total_metal_value=Sum("metals__acquisition_value"),
+        total_metal_grams=Sum("metals__weight_grams"),
     )
     return render(request, "core/locations.html", {"locations": locs})
 
@@ -644,3 +659,60 @@ def irpf_export_csv(request):
             it["vendor_name"] or "", it["vendor_document"] or "",
         ])
     return response
+
+
+# ---------- COINS CRUD ----------
+
+@login_required
+def coin_create(request):
+    if request.method == "POST":
+        form = CoinForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            coin = form.save(commit=False)
+            coin.user = request.user
+            coin.save()
+            messages.success(request, "Moeda cadastrada com sucesso!")
+            return redirect("coin_detail", pk=coin.pk)
+    else:
+        form = CoinForm(user=request.user)
+    return render(request, "core/coin_form.html", {"form": form, "is_edit": False})
+
+
+@login_required
+def coin_edit(request, pk):
+    coin = get_object_or_404(Coin, pk=pk, user=request.user)
+    if request.method == "POST":
+        form = CoinForm(request.POST, request.FILES, instance=coin, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Moeda atualizada!")
+            return redirect("coin_detail", pk=coin.pk)
+    else:
+        form = CoinForm(instance=coin, user=request.user)
+    return render(request, "core/coin_form.html", {"form": form, "is_edit": True, "coin": coin})
+
+
+@login_required
+def coin_detail(request, pk):
+    coin = get_object_or_404(Coin, pk=pk, user=request.user)
+    return render(request, "core/coin_detail.html", {"coin": coin})
+
+
+@login_required
+def coin_delete(request, pk):
+    coin = get_object_or_404(Coin, pk=pk, user=request.user)
+    if request.method == "POST":
+        coin.delete()
+        messages.success(request, "Moeda removida.")
+        return redirect("inventory")
+    return redirect("coin_detail", pk=pk)
+
+
+@login_required
+def api_countries(request):
+    """Returns country-continent mapping as JSON."""
+    from .countries import COUNTRIES, CONTINENTS
+    return JsonResponse({
+        "countries": [{"code": c, "name": n, "continent": ct} for c, n, ct in COUNTRIES],
+        "continents": CONTINENTS,
+    })
